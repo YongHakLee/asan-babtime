@@ -30,10 +30,18 @@ describe('evaluateAlerts', () => {
     expect(evaluateAlerts(null, snap('2026-10-15T16:45', 'ok'), subs, [], new Set()).some((x) => x.kind === 'boxLunchDeadline')).toBe(true)
     expect(evaluateAlerts(null, snap('2026-10-14T16:45', 'ok'), subs, [], new Set()).some((x) => x.kind === 'boxLunchDeadline')).toBe(false)
   })
-  it('closingSoon for west and new at 13:35', () => {
-    const a = evaluateAlerts(null, snap('2026-10-14T13:35', 'ok'), subs, [], new Set())
-    expect(a.find((x) => x.key.startsWith('closingSoon:west:'))?.title).toBe('서관 중식 배식이 30분 남았어요')
-    expect(a.find((x) => x.key.startsWith('closingSoon:new:'))?.title).toBe('신관 중식 배식이 30분 남았어요')
+  it('closingSoon merges west and new into one alert at 13:35', () => {
+    const a = evaluateAlerts(null, snap('2026-10-14T13:35', 'ok'), subs, [], new Set()).filter((x) => x.kind === 'closingSoon')
+    expect(a.map((x) => [x.key, x.title])).toEqual([['closingSoon:westNew:2026-10-14:lunch', '서관·신관 중식 배식이 30분 남았어요']])
+  })
+  it('closingSoon for west and new fires once per day', () => {
+    const first = evaluateAlerts(null, snap('2026-10-14T13:35', 'ok'), subs, [], new Set())
+    const again = evaluateAlerts(null, snap('2026-10-14T13:40', 'ok'), subs, [], new Set(first.map((x) => x.key)))
+    expect(again.some((x) => x.kind === 'closingSoon')).toBe(false)
+  })
+  it('closingSoon for east alone keeps the hall name', () => {
+    const a = evaluateAlerts(null, snap('2026-10-14T14:35', 'ok'), subs, [], new Set()).filter((x) => x.kind === 'closingSoon')
+    expect(a.map((x) => [x.key, x.title, x.body])).toEqual([['closingSoon:east:2026-10-14:lunch', '동관 중식 배식이 30분 남았어요', '15:00에 배식이 끝나요']])
   })
   it('queueCleared is per hall: new clears, west does not fire', () => {
     const s2 = { ...subs, queueCleared: ['west', 'new'] } as Subscriptions
@@ -66,10 +74,10 @@ describe('evaluateAlerts', () => {
     }
   })
   it('closingSoon body shows closing time; none when >30 min left or closed', () => {
-    const a = evaluateAlerts(null, snap('2026-10-14T13:35', 'ok'), subs, [], new Set()).find((x) => x.key.startsWith('closingSoon:west:'))
+    const a = evaluateAlerts(null, snap('2026-10-14T13:35', 'ok'), subs, [], new Set()).find((x) => x.key.startsWith('closingSoon:westNew:'))
     expect(a?.body).toBe('14:00에 배식이 끝나요')
     expect(evaluateAlerts(null, snap('2026-10-14T13:29', 'ok'), subs, [], new Set()).some((x) => x.kind === 'closingSoon')).toBe(false)
-    expect(evaluateAlerts(null, snap('2026-10-14T14:30', 'ok'), subs, [], new Set()).some((x) => x.key.startsWith('closingSoon:west:'))).toBe(false)
+    expect(evaluateAlerts(null, snap('2026-10-14T14:30', 'ok'), subs, [], new Set()).some((x) => x.key.startsWith('closingSoon:westNew:'))).toBe(false)
   })
   it('sent round-trips and drops keys older than two days, keeps future ones', () => {
     saveSent(

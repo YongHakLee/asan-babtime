@@ -138,18 +138,26 @@ export function evaluateAlerts(
   }
 
   if (subs.closingSoon) {
+    const closing: { hall: DiningHallId; meal: MealKey; closesAt: Date }[] = []
     for (const hall of HALLS) {
       const meal = getActiveMeal(hall, next.at)
       if (!meal) continue
       const s = getServiceStatus(hall, meal, next.at)
-      if (s.kind === 'open' && s.minutesLeft <= 30) {
-        push({
-          key: `closingSoon:${hall}:${date}:${meal}`,
-          kind: 'closingSoon',
-          title: `${VENUES[hall].label} ${MEAL_LABEL[meal]} 배식이 30분 남았어요`,
-          body: `${hm(s.closesAt)}에 배식이 끝나요`,
-        })
-      }
+      if (s.kind === 'open' && s.minutesLeft <= 30) closing.push({ hall, meal, closesAt: s.closesAt })
+    }
+    // 서관·신관은 같은 메뉴·같은 마감이라 같은 시각에 끝나면 한 번만 알린다
+    const west = closing.find((c) => c.hall === 'west')
+    const nw = closing.find((c) => c.hall === 'new')
+    const merged = west && nw && west.meal === nw.meal && west.closesAt.getTime() === nw.closesAt.getTime()
+    for (const c of closing) {
+      if (merged && c.hall === 'new') continue
+      const both = merged && c.hall === 'west'
+      push({
+        key: both ? `closingSoon:westNew:${date}:${c.meal}` : `closingSoon:${c.hall}:${date}:${c.meal}`,
+        kind: 'closingSoon',
+        title: `${both ? MENU_GROUPS.westNew.label : VENUES[c.hall].label} ${MEAL_LABEL[c.meal]} 배식이 30분 남았어요`,
+        body: `${hm(c.closesAt)}에 배식이 끝나요`,
+      })
     }
   }
 
