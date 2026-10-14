@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>{{title}} {{subtitle}}</title>
+<style>
+{{tokens}}
+@font-face {
+  font-family: "Wanted Sans Variable";
+  src: url("{{fontUrl}}") format("woff2");
+  font-weight: 45 920;
+  font-style: normal;
+}
+{{printCss}}
+</style>
+</head>
+<body>
+<section class="cover">
+  <div class="cover-inner">
+    <p class="cover-contest">{{contest}}</p>
+    <h1 class="cover-title">{{title}}</h1>
+    <p class="cover-subtitle">{{subtitle}}</p>
+    <div class="cover-rule"></div>
+  </div>
+  <div class="cover-foot">
+    {{authorLine}}<p class="cover-date">{{date}}</p>
+  </div>
+</section>
+<main class="doc">
+{{body}}
+</main>
+</body>
+</html>
