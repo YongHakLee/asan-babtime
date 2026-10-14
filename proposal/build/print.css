@@ -102,6 +102,16 @@ figure { margin: 5mm 0; }
 figure svg, img { max-width: 100%; height: auto; }
 figcaption { margin-top: 2mm; font-size: 9pt; color: var(--muted-foreground); }
 
+/* 표 캡션: 표 바로 위 한 줄, 그림 캡션(figcaption)은 그림 아래 */
+p.table-caption {
+  margin: 6mm 0 0;
+  font-size: 9pt;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  break-after: avoid;
+}
+p.table-caption + table { margin-top: 2mm; }
+
 /* 각주 */
 hr.footnotes-sep { display: none; }
 section.footnotes {
