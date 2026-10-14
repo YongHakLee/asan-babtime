@@ -51,8 +51,13 @@ export function ForecastBars({
     <div
       data-slot="forecast-bars"
       data-size={size}
-      // sm은 홈 줄 안에 놓인다: 줄 전체를 덮는 버튼(::after) 위로 올려야 막대 툴팁이 뜬다
-      className={cn(lg ? "w-full" : "relative z-10 mt-2.5 max-w-80")}
+      // sm은 홈 줄 안에 놓인다. 호버가 되는 기기에서만 줄 전체를 덮는 버튼(::after) 위로
+      // 올려 막대 툴팁을 띄우고, 터치에서는 아래에 두어 막대를 눌러도 상세 시트가 열린다
+      className={cn(
+        lg
+          ? "w-full"
+          : "mt-2.5 max-w-80 [@media(hover:hover)]:relative [@media(hover:hover)]:z-10"
+      )}
     >
       <div
         aria-hidden

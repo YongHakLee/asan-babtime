@@ -92,3 +92,26 @@ test("small forecast bars on a home row show their tooltip on hover", async ({
   await expect(tip).toContainText("11:00")
   await expect(page.getByRole("dialog")).toHaveCount(0)
 })
+
+test.describe("on a touch phone", () => {
+  test.use({ hasTouch: true, isMobile: true })
+
+  test("tapping the small forecast bars opens the hall sheet", async ({
+    page,
+  }, info) => {
+    test.skip(info.project.name !== "mobile")
+    await page.goto("/?at=2026-10-14T12:20")
+    expect(
+      await page.evaluate(() => matchMedia("(hover: hover)").matches)
+    ).toBe(false)
+    const strip = page
+      .getByRole("listitem", { name: "동관 직원식당" })
+      .locator("[data-slot=forecast-bars]")
+    // 호버가 없는 기기에서는 막대가 줄 버튼(::after) 아래에 있어 탭이 줄 버튼으로 간다
+    const box = (await strip.boundingBox())!
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2)
+    await expect(
+      page.getByRole("dialog", { name: "동관 직원식당" })
+    ).toBeVisible()
+  })
+})

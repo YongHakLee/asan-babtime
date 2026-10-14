@@ -270,14 +270,17 @@ describe("Home", () => {
     expect(hero.querySelector("[data-slot=hero-tiles]")).toBeNull()
   })
 
-  it("keeps the small forecast bars above the row-wide click target", () => {
+  it("raises the small forecast bars above the row-wide click target only on hover devices", () => {
     renderAt("2026-10-14T12:20", <Home />)
     const east = screen.getByRole("listitem", { name: "동관 직원식당" })
-    // 줄 버튼의 ::after가 줄을 덮으므로 막대가 그 위에 있어야 툴팁이 뜬다
-    expect(east.querySelector("[data-slot=forecast-bars]")).toHaveClass(
-      "relative",
-      "z-10"
+    const bars = east.querySelector("[data-slot=forecast-bars]")!
+    // 마우스에서는 막대가 줄 버튼(::after) 위에 있어야 툴팁이 뜨고,
+    // 터치에서는 아래에 있어야 막대를 눌러도 상세 시트가 열린다
+    expect(bars).toHaveClass(
+      "[@media(hover:hover)]:relative",
+      "[@media(hover:hover)]:z-10"
     )
+    expect(bars).not.toHaveClass("z-10")
   })
 
   it("hides the walk time on halls that do not serve today", () => {
