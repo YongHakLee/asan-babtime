@@ -14,7 +14,7 @@ export const VENUES: Record<VenueId, Venue> = {
     floor: 'B1F',
     location: 'official',
     directions: '동관 지하 1층, 보호자식당과 같은 공간',
-    map: { x: 280, y: 110 },
+    map: { x: 214, y: 100 },
   },
   west: {
     id: 'west',
@@ -26,8 +26,7 @@ export const VENUES: Record<VenueId, Venue> = {
     floor: 'B1F',
     location: 'estimated',
     directions: '서관 지하 1층(추정)',
-    // 임시 좌표(지도는 Task 3에서 다시 그린다)
-    map: { x: 110, y: 155 },
+    map: { x: 86, y: 126 },
   },
   new: {
     id: 'new',
@@ -39,8 +38,7 @@ export const VENUES: Record<VenueId, Venue> = {
     floor: 'B1F',
     location: 'estimated',
     directions: '신관 지하 1층(추정)',
-    // 임시 좌표(지도는 Task 3에서 다시 그린다)
-    map: { x: 110, y: 42 },
+    map: { x: 86, y: 48 },
   },
   boxLunch: {
     id: 'boxLunch',
@@ -52,7 +50,7 @@ export const VENUES: Record<VenueId, Venue> = {
     floor: 'B1F',
     location: 'estimated',
     directions: '동관 B1F 직원식당 앞',
-    map: { x: 246, y: 160 },
+    map: { x: 284, y: 100 },
   },
 }
 

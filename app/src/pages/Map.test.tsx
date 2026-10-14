@@ -8,6 +8,29 @@ import { renderAt } from "@/test/render"
 const user = userEvent.setup()
 
 describe("Map", () => {
+  it("draws the five buildings, no annex, and four pins in east-west-new-boxLunch order", () => {
+    renderAt("2026-10-14T12:20", <MapPage />)
+    const map = within(screen.getByRole("figure"))
+    for (const name of [
+      "동관",
+      "서관",
+      "신관",
+      "교육연구관",
+      "아산생명과학연구원",
+    ])
+      expect(map.getByText(name)).toBeInTheDocument()
+    expect(screen.queryByText(/별관/)).not.toBeInTheDocument()
+    const pins = within(
+      screen.getByRole("group", { name: "식당 위치" })
+    ).getAllByRole("button")
+    expect(pins.map((p) => p.getAttribute("aria-label"))).toEqual([
+      "동관 직원식당 위치",
+      "서관 직원식당 위치",
+      "신관 직원식당 위치",
+      "간편식 도시락 위치",
+    ])
+  })
+
   it("selecting west or new pin shows estimated notice and its directions", async () => {
     renderAt("2026-10-14T12:20", <MapPage />)
     await user.click(
@@ -54,7 +77,9 @@ describe("Map", () => {
     expect(
       screen.queryByText("추정 위치예요. 현장 안내와 다를 수 있어요")
     ).not.toBeInTheDocument()
-    expect(screen.getByText("단순화한 배치도")).toBeInTheDocument()
+    expect(
+      screen.getByText("단순화한 배치도예요. 건물 배치는 추정이에요")
+    ).toBeInTheDocument()
   })
 
   it("moves selection to the pressed pin", async () => {
