@@ -13,10 +13,15 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { VENUES } from "@/data/restaurants"
-import type { DiningHallId } from "@/domain/types"
+import type { DiningHallId, MealKey } from "@/domain/types"
 import { useClock } from "@/hooks/useClock"
 import { formatMinutes, seoulMinutes } from "@/lib/format"
-import { seoulYmd } from "@/lib/hours"
+import {
+  getActiveMeal,
+  getNextService,
+  getServiceStatus,
+  seoulYmd,
+} from "@/lib/hours"
 import { cn } from "@/lib/utils"
 import { getCourses } from "@/lib/menu"
 import {
@@ -118,36 +123,56 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
   )
 }
 
+/**
+ * 품절을 입력할 끼니: 배식 중이면 그 끼니, 아니면 오늘 남은 다음 끼니.
+ * day는 배식 창이 시작한 날이라 자정을 넘긴 야식도 시작한 날로 기록된다.
+ */
+function soldOutTarget(
+  hall: DiningHallId,
+  now: Date
+): { meal: MealKey; day: Date } | null {
+  const active = getActiveMeal(hall, now)
+  if (active) {
+    const s = getServiceStatus(hall, active, now)
+    if (s.kind === "open") return { meal: active, day: s.opensAt }
+  }
+  const next = getNextService(hall, now)
+  if (next && seoulYmd(next.opensAt) === seoulYmd(now)) {
+    return { meal: next.meal, day: next.opensAt }
+  }
+  return null
+}
+
 function SoldOutSection({ hall }: { hall: DiningHallId }) {
   const { now } = useClock()
   const [, bump] = useReducer((n: number) => n + 1, 0)
   useEffect(() => subscribeOverrides(bump), [])
 
-  if (hall !== "east") {
-    return (
-      <p className="text-sm text-muted-foreground">
-        품절 입력은 동관 석식에만 있어요
-      </p>
-    )
-  }
-
-  const courses = getCourses(now, "east", "dinner")
-  const meal = MEAL_LABEL.dinner
+  const venue = VENUES[hall].label
+  const target = soldOutTarget(hall, now)
+  const courses = target ? getCourses(target.day, hall, target.meal) : []
+  const mealLabel = target ? MEAL_LABEL[target.meal] : ""
 
   return (
     <section aria-labelledby="soldout-title" className="flex flex-col gap-1">
       <h2 id="soldout-title" className="text-lg font-bold tracking-tight">
         품절 입력
       </h2>
-      {courses.length === 0 ? (
+      {!target ? (
         <p className="text-sm text-muted-foreground">
-          오늘은 동관 {meal} 메뉴가 없어요
+          오늘은 {venue}에 남은 배식이 없어요
+        </p>
+      ) : courses.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          오늘은 {venue} {mealLabel} 메뉴가 없어요
         </p>
       ) : (
         <FieldGroup className="gap-0">
           {courses.map((c, i) => {
-            const id = `soldout-${c.label ?? i}`
-            const label = c.label ? `${meal} ${c.label} 품절` : `${meal} 품절`
+            const id = `soldout-${hall}-${target.meal}-${c.label ?? i}`
+            const label = c.label
+              ? `${mealLabel} ${c.label} 품절`
+              : `${mealLabel} 품절`
             return (
               <FieldLabel
                 key={id}
@@ -166,14 +191,14 @@ function SoldOutSection({ hall }: { hall: DiningHallId }) {
                   <Switch
                     id={id}
                     aria-labelledby={`${id}-title`}
-                    checked={isSoldOut("east", "dinner", c.label, now)}
+                    checked={isSoldOut(hall, target.meal, c.label, target.day)}
                     onCheckedChange={(on) =>
                       setSoldOut(
                         {
-                          hall: "east",
-                          meal: "dinner",
+                          hall,
+                          meal: target.meal,
                           course: c.label,
-                          date: seoulYmd(now),
+                          date: seoulYmd(target.day),
                         },
                         on
                       )
