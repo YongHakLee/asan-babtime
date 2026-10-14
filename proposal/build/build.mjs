@@ -41,7 +41,7 @@ function placeFootnotes(html) {
 
 const src = fs.readFileSync(input, 'utf8');
 const { meta, body } = parseFrontMatter(src);
-const md = new MarkdownIt({ html: true, typographer: false }).use(footnote);
+const md = new MarkdownIt({ html: true, linkify: true, typographer: false }).use(footnote);
 let html = placeFootnotes(md.render(body));
 
 const tokensAll = fs.readFileSync(path.join(root, 'design/tokens.css'), 'utf8');
