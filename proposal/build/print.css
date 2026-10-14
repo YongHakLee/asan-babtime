@@ -122,7 +122,7 @@ section.footnotes {
   line-height: 1.6;
   color: var(--muted-foreground);
 }
-section.footnotes ol { margin: 0; padding-left: 5mm; }
+section.footnotes ol { margin: 0; padding-left: 7mm; }
 section.footnotes li { margin-bottom: 1.5mm; }
 section.footnotes li::marker { color: var(--muted-foreground); }
 section.footnotes p { margin: 0; display: inline; }
