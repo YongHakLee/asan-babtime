@@ -44,6 +44,11 @@ function seoulHm(d: Date): { h: number; m: number } {
   return { h: Number(p.hour), m: Number(p.minute) }
 }
 
+function hm(d: Date): string {
+  const { h, m } = seoulHm(d)
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
 function seoulDow(d: Date): number {
   const [y, m, day] = seoulYmd(d).split('-').map(Number)
   return new Date(Date.UTC(y, m - 1, day)).getUTCDay()
@@ -81,6 +86,10 @@ export function evaluateAlerts(
     for (const hall of subs.queueCleared) {
       const was = prev.levels[hall]
       const now = next.levels[hall]
+      // 배식 종료로 대기가 사라진 경우는 제외: 다음 시점에 같은 끼니가 열려 있어야 한다
+      const mealNext = getActiveMeal(hall, next.at)
+      const mealPrev = getActiveMeal(hall, prev.at)
+      if (!mealNext || mealNext !== mealPrev) continue
       if ((was === 'queue' || was === 'busy') && (now === 'ok' || now === 'mid')) {
         push({
           key: `queueCleared:${hall}:${date}:${String(h).padStart(2, '0')}`,
@@ -137,7 +146,7 @@ export function evaluateAlerts(
           key: `closingSoon:${hall}:${date}:${meal}`,
           kind: 'closingSoon',
           title: `${VENUES[hall].label} ${MEAL_LABEL[meal]} 배식이 30분 남았어요`,
-          body: '식사 계획을 서둘러 주세요',
+          body: `${hm(s.closesAt)}에 배식이 끝나요`,
         })
       }
     }
