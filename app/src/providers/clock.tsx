@@ -11,6 +11,8 @@ import { createClock, type Clock } from "@/lib/clock"
 
 const TICK_MS = 30_000
 
+type Snap = { now: Date; isDemo: boolean }
+
 export type ClockValue = {
   now: Date
   isDemo: boolean
@@ -35,20 +37,32 @@ export function ClockProvider({
   })
   const clock = injected ?? own
 
-  // getSnapshot은 변경(notify) 때만 새 Date를 만들어 참조를 안정적으로 유지
+  // getSnapshot은 변경 때만 새 객체를 만들어 참조를 안정적으로 유지.
+  // now와 isDemo를 한 스냅샷에 담아 항상 서로 일치시킨다.
   const store = useMemo(() => {
-    const cache = { snap: clock.now() }
+    const read = (): Snap => ({ now: clock.now(), isDemo: clock.isDemo() })
+    const cache = { snap: read() }
     return {
-      subscribe: (fn: () => void) =>
-        clock.subscribe(() => {
-          cache.snap = clock.now()
+      subscribe: (fn: () => void) => {
+        const unsub = clock.subscribe(() => {
+          cache.snap = read()
           fn()
-        }),
+        })
+        // 렌더~구독 사이에 바뀐 시계 상태를 따라잡는다
+        const fresh = read()
+        if (
+          fresh.isDemo !== cache.snap.isDemo ||
+          Math.abs(fresh.now.getTime() - cache.snap.now.getTime()) >= 1000
+        ) {
+          cache.snap = fresh
+          fn()
+        }
+        return unsub
+      },
       getSnapshot: () => cache.snap,
     }
   }, [clock])
-  const now = useSyncExternalStore(store.subscribe, store.getSnapshot)
-  const isDemo = clock.isDemo()
+  const { now, isDemo } = useSyncExternalStore(store.subscribe, store.getSnapshot)
 
   useEffect(() => {
     const id = setInterval(() => clock.tick(), TICK_MS)

@@ -2,6 +2,7 @@ import { act, render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
 import { useClock } from "@/hooks/useClock"
+import { createClock } from "@/lib/clock"
 import { ClockProvider } from "./clock"
 
 function Probe() {
@@ -33,5 +34,27 @@ describe("ClockProvider", () => {
     act(() => screen.getByText("real").click())
     expect(screen.getByTestId("d").textContent).toBe("false")
     expect(shown()).toBeGreaterThanOrEqual(before)
+  })
+
+  it("injected clock changed before mount: now and isDemo agree immediately", () => {
+    const clock = createClock()
+    const demo = new Date("2026-10-14T12:20:00+09:00")
+    const setDemo = clock.setDemo
+    // seed state change that happens between render and subscribe
+    let first = true
+    clock.subscribe = ((orig) => (fn: () => void) => {
+      if (first) {
+        first = false
+        setDemo(demo)
+      }
+      return orig(fn)
+    })(clock.subscribe.bind(clock))
+    render(
+      <ClockProvider clock={clock}>
+        <Probe />
+      </ClockProvider>
+    )
+    expect(screen.getByTestId("d").textContent).toBe("true")
+    expect(Math.abs(shown() - demo.getTime())).toBeLessThan(5000)
   })
 })
