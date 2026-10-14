@@ -11,6 +11,10 @@ describe("Home", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "지금은 신관이 바로 드실 수 있어요"
     )
+    const hero = screen.getByRole("heading", { level: 1 }).closest("section")!
+    expect(
+      hero.querySelector("[data-slot=hero-tiles]")?.textContent
+    ).toBe("신")
     expect(
       screen.getByText(/^동관은 .+, 서관은 .+부터 한산해질 것으로 보여요$/)
     ).toBeInTheDocument()
@@ -252,6 +256,42 @@ describe("Home", () => {
     expect(within(sheet).queryByRole("list", { name: /예상 대기/ })).toBeNull()
     expect(
       within(sheet).getByRole("table", { name: "서관 직원식당 평소 혼잡 패턴" })
+    ).toBeInTheDocument()
+  })
+
+  it("shows no building tile in the hero when nothing is reachable before closing", () => {
+    localStorage.setItem("babttae.workBuilding", '"asanLife"')
+    renderAt("2026-10-14T14:55", <Home />)
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "지금 출발하면 마감 전에 도착하기 어려워요"
+    )
+    const hero = screen.getByRole("heading", { level: 1 }).closest("section")!
+    expect(hero.querySelector("[data-slot=building-tile]")).toBeNull()
+    expect(hero.querySelector("[data-slot=hero-tiles]")).toBeNull()
+  })
+
+  it("keeps the small forecast bars above the row-wide click target", () => {
+    renderAt("2026-10-14T12:20", <Home />)
+    const east = screen.getByRole("listitem", { name: "동관 직원식당" })
+    // 줄 버튼의 ::after가 줄을 덮으므로 막대가 그 위에 있어야 툴팁이 뜬다
+    expect(east.querySelector("[data-slot=forecast-bars]")).toHaveClass(
+      "relative",
+      "z-10"
+    )
+  })
+
+  it("hides the walk time on halls that do not serve today", () => {
+    localStorage.setItem("babttae.workBuilding", '"west"')
+    renderAt("2026-10-17T12:20", <Home />)
+    for (const name of ["서관 직원식당", "신관 직원식당"]) {
+      const row = screen.getByRole("listitem", { name })
+      expect(within(row).getByText("주말 휴무")).toBeInTheDocument()
+      expect(within(row).queryByText(/걸어서/)).toBeNull()
+    }
+    expect(
+      within(screen.getByRole("listitem", { name: "동관 직원식당" })).getByText(
+        "걸어서 7분(추정)"
+      )
     ).toBeInTheDocument()
   })
 

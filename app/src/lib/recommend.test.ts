@@ -127,6 +127,13 @@ describe('headline with a work building', () => {
     expect(homeHeadline(t('2026-10-14T14:55'), 'asanLife')).toMatchObject({
       title: '지금 출발하면 마감 전에 도착하기 어려워요',
       detail: '다음 배식은 석식 17:30부터예요',
+      tiles: [],
+    }))
+  it('just before opening counts the wait until it opens (Wed 10:55 from 동관)', () =>
+    expect(homeHeadline(t('2026-10-14T10:55'), 'east')).toMatchObject({
+      title: '지금 출발하면 동관이 가장 빨라요',
+      detail: '걸어서 2분, 도착하면 약 3분 기다려요',
+      tiles: ['동'],
     }))
   it('the same moment without a work building still recommends the open hall', () =>
     expect(homeHeadline(t('2026-10-14T14:55')).title).toMatch(/^지금은 동관이/))

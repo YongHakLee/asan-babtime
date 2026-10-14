@@ -58,12 +58,13 @@ function dayOffLabel(now: Date): string {
   return seoulWeekdayIndex(now) >= 5 ? "주말 휴무" : "공휴일 휴무"
 }
 
+/** 오늘 끼니가 하나라도 있는지(주말·공휴일의 서관·신관은 없다) */
+const servesToday = (venue: VenueId, now: Date) =>
+  MEALS.some((m) => getServiceStatus(venue, m, now).kind !== "notToday")
+
 /** 배식 중이 아닌 식당의 상태 글과 함께 보여 줄 다음 끼니 */
 function idleState(venue: VenueId, now: Date) {
   const next = getNextService(venue, now)
-  const servesToday = MEALS.some(
-    (m) => getServiceStatus(venue, m, now).kind !== "notToday"
-  )
   const sameDay = next && seoulYmd(next.opensAt) === seoulYmd(now)
   const menu = next ? summary(getCourses(next.opensAt, venue, next.meal)) : ""
 
@@ -76,7 +77,7 @@ function idleState(venue: VenueId, now: Date) {
     }
   }
   return {
-    primary: servesToday ? "오늘 운영 종료" : dayOffLabel(now),
+    primary: servesToday(venue, now) ? "오늘 운영 종료" : dayOffLabel(now),
     secondary: next ? laterStart(next.opensAt, now) : undefined,
     tone: "text-muted-foreground",
     menu,
@@ -161,7 +162,9 @@ function HallRow({
   const { now } = useClock()
   const { meal, status, level, waitMinutes } = useVenueStatus(hall)
   const venue = VENUES[hall]
-  const walk = from ? walkMinutes(from, hall) : undefined
+  // 오늘 쉬는 식당에는 도보 시간을 붙이지 않는다
+  const walk =
+    from && servesToday(hall, now) ? walkMinutes(from, hall) : undefined
 
   if (meal && status?.kind === "open") {
     const busy = level === "queue" || level === "busy"
@@ -280,16 +283,18 @@ export default function HomePage() {
         className="bg-deep px-4 pt-4 pb-[2.125rem] text-deep-foreground lg:w-[42%] lg:shrink-0 lg:pt-12 lg:pr-12 lg:pl-[max(1rem,calc((100cqw_-_64rem)/2))]"
       >
         <div className="lg:sticky lg:top-12">
-          <div className="flex gap-1.5">
-            {tiles.map((g) => (
-              <BuildingTile
-                key={g}
-                glyph={g}
-                tone="inverse"
-                className="size-[1.875rem] rounded-[7px] text-[0.9375rem] lg:size-10 lg:text-lg"
-              />
-            ))}
-          </div>
+          {tiles.length > 0 && (
+            <div data-slot="hero-tiles" className="flex gap-1.5">
+              {tiles.map((g) => (
+                <BuildingTile
+                  key={g}
+                  glyph={g}
+                  tone="inverse"
+                  className="size-[1.875rem] rounded-[7px] text-[0.9375rem] lg:size-10 lg:text-lg"
+                />
+              ))}
+            </div>
+          )}
           <h1
             id="home-title"
             className="mt-5 text-[1.5625rem] leading-[1.28] font-bold tracking-[-0.035em] text-balance lg:mt-7 lg:text-[2.375rem] lg:leading-[1.2]"

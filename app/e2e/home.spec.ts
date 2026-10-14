@@ -76,3 +76,19 @@ test("hall row opens the detail sheet with the usual pattern, also in dark at 36
     page.getByRole("button", { name: "동관 직원식당 위치" })
   ).toHaveAttribute("aria-pressed", "true")
 })
+
+test("small forecast bars on a home row show their tooltip on hover", async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== "desktop")
+  await page.goto("/?at=2026-10-14T12:20")
+  const bars = page
+    .getByRole("listitem", { name: "동관 직원식당" })
+    .locator("[data-slot=forecast-bars] [data-slot=tooltip-trigger]")
+  // 줄 전체를 덮는 버튼(::after)이 막대를 가리면 hover가 버튼으로 가 툴팁이 뜨지 않는다
+  await bars.first().hover()
+  const tip = page.locator("[data-slot=tooltip-content]")
+  await expect(tip).toBeVisible()
+  await expect(tip).toContainText("11:00")
+  await expect(page.getByRole("dialog")).toHaveCount(0)
+})

@@ -51,7 +51,8 @@ export function ForecastBars({
     <div
       data-slot="forecast-bars"
       data-size={size}
-      className={cn(lg ? "w-full" : "mt-2.5 max-w-80")}
+      // sm은 홈 줄 안에 놓인다: 줄 전체를 덮는 버튼(::after) 위로 올려야 막대 툴팁이 뜬다
+      className={cn(lg ? "w-full" : "relative z-10 mt-2.5 max-w-80")}
     >
       <div
         aria-hidden

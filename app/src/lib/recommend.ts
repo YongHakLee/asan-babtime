@@ -141,7 +141,7 @@ export function homeHeadline(
     return {
       title: '지금 출발하면 마감 전에 도착하기 어려워요',
       detail: next ? nextServiceLine(next) : null,
-      tiles: [VENUES[open[0].hall].short],
+      tiles: [],
     }
   }
 
