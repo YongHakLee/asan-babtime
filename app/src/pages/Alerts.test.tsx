@@ -48,9 +48,13 @@ describe("Alerts", () => {
     )
     expect(getSubscriptions().queueCleared).toContain("east")
     await user.click(
-      screen.getByRole("switch", { name: "서관·신관 대기가 줄면 알려주기" })
+      screen.getByRole("switch", { name: "서관 대기가 줄면 알려주기" })
     )
-    expect(getSubscriptions().queueCleared).toContain("westNew")
+    expect(getSubscriptions().queueCleared).toContain("west")
+    await user.click(
+      screen.getByRole("switch", { name: "신관 대기가 줄면 알려주기" })
+    )
+    expect(getSubscriptions().queueCleared).toEqual(["east", "west", "new"])
     await user.click(screen.getByRole("switch", { name: "배식 마감 30분 전" }))
     expect(getSubscriptions().closingSoon).toBe(true)
     await user.click(

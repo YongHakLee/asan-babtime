@@ -11,6 +11,15 @@ function course(items: string[], main?: Main, label?: string): Course {
   return label ? { label, items: list } : { items: list }
 }
 
+/** 원산지 표시(10월 3주차 「오늘의 중식 메뉴」 하단 안내 전사). */
+export const ORIGIN: Record<string, string> = {
+  소고기: '호주산',
+  돼지고기: '국내산·외국산',
+  닭고기: '국내산',
+  쌀: '국내산',
+  '김치(배추·고춧가루)': '국내산',
+}
+
 const DATES = [
   '2026-10-12',
   '2026-10-13',

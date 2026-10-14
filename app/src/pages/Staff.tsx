@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/field"
 import { Switch } from "@/components/ui/switch"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { VENUES } from "@/data/restaurants"
+import { DINING_HALLS as HALLS, VENUES } from "@/data/restaurants"
 import type { DiningHallId, MealKey } from "@/domain/types"
 import { useClock } from "@/hooks/useClock"
 import { formatMinutes, seoulMinutes } from "@/lib/format"
@@ -34,8 +34,6 @@ import {
   type OverrideKind,
 } from "@/lib/override"
 import { MEAL_LABEL } from "@/lib/recommend"
-
-const HALLS: DiningHallId[] = ["east", "westNew"]
 
 const BUTTONS: {
   kind: OverrideKind
@@ -208,6 +206,7 @@ function SoldOutSection({ hall }: { hall: DiningHallId }) {
                           meal: target.meal,
                           course: c.label,
                           date: seoulYmd(target.day),
+                          at: now.getTime(),
                         },
                         on
                       )
@@ -239,7 +238,7 @@ export default function StaffPage() {
           >
             검수 직원 화면
           </h1>
-          <p className="mt-1 text-xs text-deep-foreground/70">
+          <p className="mt-1 text-xs text-deep-muted">
             입구 상황을 누르면 직원들 화면에 바로 반영돼요. 15분 동안 유지돼요
           </p>
         </div>
@@ -255,7 +254,7 @@ export default function StaffPage() {
                 if (v[0] !== undefined) setHall(v[0] as DiningHallId)
               }}
               spacing={1.5}
-              className="grid w-full grid-cols-2"
+              className="grid w-full grid-cols-3"
             >
               {HALLS.map((h) => (
                 <ToggleGroupItem

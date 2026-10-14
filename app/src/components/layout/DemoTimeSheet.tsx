@@ -44,13 +44,13 @@ export function DemoTimeSheet({
   )
 }
 
-/** 주소에 ?at=이 있으면 그대로 붙여 검수 직원 화면으로 간다. */
-function staffHref(search: string): string {
+/** 주소에 ?at=이 있으면 그대로 붙여 검수 직원·운영자 화면으로 간다. */
+function keepAt(path: string, search: string): string {
   const at = new URLSearchParams(search).get("at")
   // 시각의 ':'은 그대로 두어 주소를 읽기 쉽게 한다
   return at
-    ? `/staff?at=${encodeURIComponent(at).replace(/%3A/gi, ":")}`
-    : "/staff"
+    ? `${path}?at=${encodeURIComponent(at).replace(/%3A/gi, ":")}`
+    : path
 }
 
 function DemoTimeForm({ onDone }: { onDone: () => void }) {
@@ -130,13 +130,22 @@ function DemoTimeForm({ onDone }: { onDone: () => void }) {
         >
           실시간으로 돌아가기
         </Button>
-        <Link
-          to={staffHref(search)}
-          onClick={onDone}
-          className={cn(buttonVariants({ variant: "link" }), "h-11 self-center")}
-        >
-          검수 직원 화면 열기
-        </Link>
+        <div className="flex flex-wrap justify-center gap-x-2">
+          <Link
+            to={keepAt("/staff", search)}
+            onClick={onDone}
+            className={cn(buttonVariants({ variant: "link" }), "h-11")}
+          >
+            검수 직원 화면 열기
+          </Link>
+          <Link
+            to={keepAt("/ops", search)}
+            onClick={onDone}
+            className={cn(buttonVariants({ variant: "link" }), "h-11")}
+          >
+            운영자 화면 열기
+          </Link>
+        </div>
       </SheetFooter>
     </>
   )

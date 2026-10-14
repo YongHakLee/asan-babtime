@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { describe, expect, it } from "vitest"
 
 import { createClock } from "@/lib/clock"
+import { ORIGIN_NOTE } from "@/lib/menu"
 import { setSoldOut } from "@/lib/override"
 import { getFavorites, getSubscriptions } from "@/lib/prefs"
 import Menu from "@/pages/Menu"
@@ -21,6 +22,19 @@ describe("Menu", () => {
     renderAt("2026-10-14T12:20", <Menu />)
     expect(screen.getByText("꽈리고추간장닭갈비")).toBeVisible()
     expect(screen.getByText("투움바파스타")).toBeVisible()
+    // 둘째 열은 서관·신관 공통 메뉴 한 열이다
+    expect(
+      screen.getByRole("heading", { level: 3, name: /^서관·신관 공통/ })
+    ).toBeInTheDocument()
+    expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(2)
+  })
+
+  it("shows origin note for lunch only", async () => {
+    renderAt("2026-10-14T12:20", <Menu />)
+    expect(screen.getByText(ORIGIN_NOTE)).toBeVisible()
+    const meals = screen.getByRole("group", { name: "끼니" })
+    await userEvent.click(within(meals).getByRole("button", { name: "조식" }))
+    expect(screen.queryByText(ORIGIN_NOTE)).not.toBeInTheDocument()
   })
 
   it("saturday shows live corner label for westNew", () => {

@@ -7,16 +7,20 @@ test("staff input reflects on home in another tab", async ({ context }) => {
   const staff = await context.newPage()
   await home.goto(`/?at=${AT}`)
   await staff.goto(`/staff?at=${AT}`)
-  await staff.getByRole("button", { name: "서관·신관" }).click()
-  await staff.getByRole("button", { name: "줄 있음" }).click()
-  await expect(staff.getByRole("button", { name: "줄 있음" })).toHaveAttribute(
+  // 모델은 12:20 서관을 '줄 있음'으로 보므로, 직원이 '여유'를 눌러야만 바뀐다
+  await expect(
+    home.getByRole("listitem", { name: "서관 직원식당" })
+  ).toContainText("줄 있음")
+  await staff.getByRole("button", { name: "서관", exact: true }).click()
+  await staff.getByRole("button", { name: "여유" }).click()
+  await expect(staff.getByRole("button", { name: "여유" })).toHaveAttribute(
     "aria-pressed",
     "true"
   )
   await expect(staff.getByText(/에 입력, \d+분 남음/)).toBeVisible()
   await expect(
-    home.getByRole("listitem", { name: /서관·신관 직원식당/ })
-  ).toContainText("줄 있음")
+    home.getByRole("listitem", { name: "서관 직원식당" })
+  ).toContainText("여유")
 })
 
 test("staff opened first, home later still shows the input", async ({
@@ -27,11 +31,11 @@ test("staff opened first, home later still shows the input", async ({
   await staff.waitForTimeout(1500)
   const home = await context.newPage()
   await home.goto(`/?at=${AT}`)
-  await staff.getByRole("button", { name: "서관·신관" }).click()
-  await staff.getByRole("button", { name: "줄 있음" }).click()
+  await staff.getByRole("button", { name: "서관", exact: true }).click()
+  await staff.getByRole("button", { name: "여유" }).click()
   await expect(
-    home.getByRole("listitem", { name: /서관·신관 직원식당/ })
-  ).toContainText("줄 있음", { timeout: 3000 })
+    home.getByRole("listitem", { name: "서관 직원식당" })
+  ).toContainText("여유", { timeout: 3000 })
 })
 
 test("home on a demo ?at= reflects staff input made on the real clock", async ({
@@ -41,12 +45,12 @@ test("home on a demo ?at= reflects staff input made on the real clock", async ({
   await home.goto(`/?at=${AT}`)
   const staff = await context.newPage()
   await staff.goto("/staff")
-  await staff.getByRole("button", { name: "서관·신관" }).click()
-  await staff.getByRole("button", { name: "줄 있음" }).click()
+  await staff.getByRole("button", { name: "서관", exact: true }).click()
+  await staff.getByRole("button", { name: "여유" }).click()
   await expect(staff.getByText(/에 입력, 15분 남음/)).toBeVisible()
   await expect(
-    home.getByRole("listitem", { name: /서관·신관 직원식당/ })
-  ).toContainText("줄 있음", { timeout: 3000 })
+    home.getByRole("listitem", { name: "서관 직원식당" })
+  ).toContainText("여유", { timeout: 3000 })
 })
 
 test("home set by the demo sheet reflects staff input from a new tab", async ({
@@ -65,11 +69,11 @@ test("home set by the demo sheet reflects staff input from a new tab", async ({
 
   const staff = await context.newPage()
   await staff.goto("/staff")
-  await staff.getByRole("button", { name: "서관·신관" }).click()
-  await staff.getByRole("button", { name: "줄 있음" }).click()
+  await staff.getByRole("button", { name: "서관", exact: true }).click()
+  await staff.getByRole("button", { name: "여유" }).click()
   await expect(
-    home.getByRole("listitem", { name: /서관·신관 직원식당/ })
-  ).toContainText("줄 있음", { timeout: 3000 })
+    home.getByRole("listitem", { name: "서관 직원식당" })
+  ).toContainText("여유", { timeout: 3000 })
 })
 
 test("reopening ?at= starts at the given time again", async ({ page }) => {

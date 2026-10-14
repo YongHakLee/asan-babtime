@@ -1,4 +1,6 @@
-import type { DiningHallId } from '@/domain/types'
+import { BUILDINGS } from '@/data/buildings'
+import { DINING_HALLS } from '@/data/restaurants'
+import type { BuildingId, DiningHallId } from '@/domain/types'
 import { storage } from '@/lib/storage'
 
 export interface Subscriptions {
@@ -41,8 +43,14 @@ export function toggleFavorite(name: string): void {
   emit()
 }
 
+/** 예전 값(westNew 등) 중 지금 식당이 아닌 것은 버린다. */
 export function getSubscriptions(): Subscriptions {
-  return { ...DEFAULT_SUBS, ...storage.get<Partial<Subscriptions>>('subscriptions', {}) }
+  const s = { ...DEFAULT_SUBS, ...storage.get<Partial<Subscriptions>>('subscriptions', {}) }
+  const halls: unknown[] = Array.isArray(s.queueCleared) ? s.queueCleared : []
+  return {
+    ...s,
+    queueCleared: halls.filter((h): h is DiningHallId => DINING_HALLS.includes(h as DiningHallId)),
+  }
 }
 
 export function setSubscriptions(s: Subscriptions): void {
@@ -50,13 +58,35 @@ export function setSubscriptions(s: Subscriptions): void {
   emit()
 }
 
-export function rateMeal(key: string, r: Rating): void {
-  storage.set('ratings', { ...storage.get<Record<string, Rating>>('ratings', {}), [key]: r })
+/** 근무 건물. 저장된 값이 지금 건물 목록에 없으면 미설정으로 본다. */
+export function getWorkBuilding(): BuildingId | null {
+  const b = storage.get<unknown>('workBuilding', null)
+  return typeof b === 'string' && Object.hasOwn(BUILDINGS, b) ? (b as BuildingId) : null
+}
+
+export function setWorkBuilding(b: BuildingId | null): void {
+  storage.set('workBuilding', b)
   emit()
 }
 
+const isObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
+
+/** 저장된 별점 묶음. 형식이 깨졌으면(null·배열·숫자 등) 빈 묶음으로 본다. */
+function ratings(): Record<string, unknown> {
+  const all = storage.get<unknown>('ratings', {})
+  return isObject(all) ? all : {}
+}
+
+export function rateMeal(key: string, r: Rating): void {
+  storage.set('ratings', { ...ratings(), [key]: r })
+  emit()
+}
+
+/** 저장된 별점. 항목이 객체가 아니면(null·문자열 등) 없는 것으로 본다. 필드 검증은 쓰는 쪽이 한다. */
 export function getRating(key: string): Rating | null {
-  return storage.get<Record<string, Rating>>('ratings', {})[key] ?? null
+  const r = ratings()[key]
+  return isObject(r) ? (r as unknown as Rating) : null
 }
 
 function fnv1a(s: string): number {
@@ -74,4 +104,12 @@ export function mockRating(itemName: string): { avg: number; count: number } {
   const avg = 3.8 + ((h % 101) / 100) * 1.0
   const count = 40 + (Math.floor(h / 101) % 201)
   return { avg: Math.round(avg * 10) / 10, count }
+}
+
+/** 이름 해시 기반의 결정적 모의 잔반 비율 (남기지 않음 55–70%, 많이 남김 5–12%, 나머지 조금 남김). */
+export function mockLeftover(itemName: string): Record<Rating['leftover'], number> {
+  const h = fnv1a(`${itemName}|leftover`)
+  const none = 0.55 + ((h % 151) / 150) * 0.15
+  const much = 0.05 + ((Math.floor(h / 151) % 71) / 70) * 0.07
+  return { none, some: 1 - none - much, much }
 }

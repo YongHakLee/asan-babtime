@@ -1,3 +1,4 @@
+import { DINING_HALLS } from '@/data/restaurants'
 import type { DiningHallId, MealKey } from '@/domain/types'
 import { seoulYmd } from '@/lib/hours'
 import { storage } from '@/lib/storage'
@@ -19,6 +20,8 @@ export interface SoldOut {
   course?: string
   /** Seoul YYYY-MM-DD */
   date: string
+  /** 입력한 순간의 화면 시각(시연 시각일 수 있음), epoch ms. 운영자 화면 품절 기록 표기에만 쓴다. */
+  at?: number
 }
 
 const OVERRIDE_KEY = 'overrides'
@@ -37,14 +40,32 @@ const notify = () => listeners.forEach((fn) => fn())
 
 if (channel) channel.onmessage = notify
 
+const isHall = (h: unknown): h is DiningHallId => DINING_HALLS.includes(h as DiningHallId)
+
+/** 저장된 직원 입력. 지금 식당이 아닌 항목(예전 westNew 등)과 형식이 다른 값은 건너뛴다. */
+function readOverrides(): OverrideMap {
+  const raw = storage.get<unknown>(OVERRIDE_KEY, {})
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const out: OverrideMap = {}
+  for (const [k, o] of Object.entries(raw as Record<string, Override | undefined>)) {
+    if (isHall(k) && o && o.hall === k) out[k] = o
+  }
+  return out
+}
+
+/** 저장된 품절 표시. 지금 식당이 아닌 항목은 건너뛴다. */
+function readSoldOut(): SoldOut[] {
+  const raw = storage.get<unknown>(SOLDOUT_KEY, [])
+  return Array.isArray(raw) ? raw.filter((x): x is SoldOut => !!x && isHall((x as SoldOut).hall)) : []
+}
+
 function broadcast() {
   channel?.postMessage('changed')
   notify()
 }
 
 export function setOverride(hall: DiningHallId, kind: OverrideKind, at: Date): void {
-  const map = storage.get<OverrideMap>(OVERRIDE_KEY, {})
-  storage.set(OVERRIDE_KEY, { ...map, [hall]: { hall, kind, at: at.getTime(), realAt: Date.now() } })
+  storage.set(OVERRIDE_KEY, { ...readOverrides(), [hall]: { hall, kind, at: at.getTime(), realAt: Date.now() } })
   broadcast()
 }
 
@@ -58,7 +79,7 @@ export function overrideRemainingMs(o: Override): number {
  * 시연 시각은 탭마다 다를 수 있어 쓰지 않는다.
  */
 export function getActiveOverride(hall: DiningHallId): Override | null {
-  const o = storage.get<OverrideMap>(OVERRIDE_KEY, {})[hall]
+  const o = readOverrides()[hall]
   if (!o || typeof o.realAt !== 'number') return null
   const age = Date.now() - o.realAt
   return age >= 0 && age < OVERRIDE_TTL_MS ? o : null
@@ -68,16 +89,19 @@ const sameSoldOut = (a: SoldOut, b: SoldOut) =>
   a.hall === b.hall && a.meal === b.meal && a.course === b.course && a.date === b.date
 
 export function setSoldOut(s: SoldOut, on: boolean): void {
-  const rest = storage.get<SoldOut[]>(SOLDOUT_KEY, []).filter((x) => !sameSoldOut(x, s))
+  const rest = readSoldOut().filter((x) => !sameSoldOut(x, s))
   storage.set(SOLDOUT_KEY, on ? [...rest, s] : rest)
   broadcast()
 }
 
+/** 그 날(서울 YYYY-MM-DD) 품절 입력. 입력한 순서대로. */
+export function soldOutOn(date: string): SoldOut[] {
+  return readSoldOut().filter((x) => x.date === date)
+}
+
 export function isSoldOut(hall: DiningHallId, meal: MealKey, course: string | undefined, at: Date): boolean {
   const date = seoulYmd(at)
-  return storage
-    .get<SoldOut[]>(SOLDOUT_KEY, [])
-    .some((x) => x.hall === hall && x.meal === meal && x.course === course && x.date === date)
+  return readSoldOut().some((x) => x.hall === hall && x.meal === meal && x.course === course && x.date === date)
 }
 
 export function subscribeOverrides(fn: () => void): () => void {

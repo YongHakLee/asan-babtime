@@ -1,13 +1,13 @@
-import { VENUES } from '@/data/restaurants'
-import type { DiningHallId, MealKey } from '@/domain/types'
+import { DINING_HALLS as HALLS, VENUES } from '@/data/restaurants'
+import type { BuildingId, DiningHallId, MealKey, Venue } from '@/domain/types'
 import { getActiveMeal, getNextService, getServiceStatus } from '@/lib/hours'
 import { dayPopularity, getCourses, summary } from '@/lib/menu'
 import { getActiveOverride, overrideRemainingMs } from '@/lib/override'
 import { simulateQueue } from '@/lib/queue'
 import { effectiveWait } from '@/lib/status'
+import { fastestHall } from '@/lib/walk'
 
 const MIN = 60_000
-const HALLS: DiningHallId[] = ['east', 'westNew']
 export const MEAL_LABEL: Record<MealKey, string> = {
   breakfast: '조식',
   lunch: '중식',
@@ -86,12 +86,47 @@ function clock(d: Date): string {
 }
 
 /** 서관·신관은 주말·공휴일에 쉰다(평일에만 중식 운영). */
-const isWestNewClosedToday = (at: Date) => getServiceStatus('westNew', 'lunch', at).kind === 'notToday'
+const isWestNewClosedToday = (at: Date) =>
+  (['west', 'new'] as const).every((h) => getServiceStatus(h, 'lunch', at).kind === 'notToday')
 
-type Tile = '동' | '서' | '신'
-const TILES: Record<DiningHallId, Tile[]> = { east: ['동'], westNew: ['서', '신'] }
+type Tile = Venue['short']
 
-export function homeHeadline(at: Date): { title: string; detail: string | null; tiles: Tile[] } {
+/** 지금 이후 가장 먼저 시작하는 직원식당 배식 */
+function nextService(at: Date): { meal: MealKey; opensAt: Date } | null {
+  const nexts = HALLS.flatMap((h) => {
+    const n = getNextService(h, at)
+    return n ? [n] : []
+  })
+  nexts.sort((a, b) => a.opensAt.getTime() - b.opensAt.getTime())
+  return nexts[0] ?? null
+}
+
+const nextServiceLine = (n: { meal: MealKey; opensAt: Date }) =>
+  `다음 배식은 ${MEAL_LABEL[n.meal]} ${clock(n.opensAt)}부터예요`
+
+export function homeHeadline(
+  at: Date,
+  from?: BuildingId | null,
+): { title: string; detail: string | null; tiles: Tile[] } {
+  // 근무 건물이 있으면 도보 + 도착 시 대기로 고른다. 도착 시 연 식당이 없으면 기존 규칙으로.
+  const fast = from ? fastestHall(at, from) : null
+  if (fast) {
+    const v = VENUES[fast.hall]
+    const untilOpen = Math.round(fast.untilOpen)
+    let detail: string
+    if (untilOpen > 0) {
+      // 도착한 뒤에 배식을 시작한다: 시작 시각과 남은 시간을 말하고, 시작 직후 줄이 있으면 덧붙인다
+      const queue = Math.round(fast.queueWait)
+      detail = `걸어서 ${fast.walk}분, ${clock(fast.ready)} 배식 시작까지 ${untilOpen}분`
+      if (fast.queueWait >= 2) detail += ` (시작 직후 약 ${queue}분 대기)`
+    } else {
+      const arrival =
+        fast.waitOnArrival < 2 ? '바로 드실 수 있어요' : `약 ${Math.round(fast.waitOnArrival)}분 기다려요`
+      detail = `걸어서 ${fast.walk}분, 도착하면 ${arrival}`
+    }
+    return { title: `지금 출발하면 ${v.label}이 가장 빨라요`, detail, tiles: [v.short] }
+  }
+
   const open = HALLS.flatMap((hall) => {
     const meal = getActiveMeal(hall, at)
     if (!meal || getServiceStatus(hall, meal, at).kind !== 'open') return []
@@ -99,19 +134,20 @@ export function homeHeadline(at: Date): { title: string; detail: string | null; 
   })
 
   if (open.length === 0) {
-    const nexts = HALLS.flatMap((h) => {
-      const n = getNextService(h, at)
-      return n ? [n] : []
-    })
-    nexts.sort((a, b) => a.opensAt.getTime() - b.opensAt.getTime())
-    const next = nexts[0]
+    const next = nextService(at)
     if (!next) return { title: '오늘은 배식 정보가 없어요', detail: null, tiles: ['동'] }
     const dishes = summary(getCourses(next.opensAt, 'east', next.meal))
     const detail = dishes ? `${MEAL_LABEL[next.meal]} 메뉴: ${dishes}` : null
+    return { title: nextServiceLine(next), detail, tiles: ['동'] }
+  }
+
+  // 근무 건물에서 걸어가면 모두 마감 뒤에 도착한다: 대기만 보고 권하지 않는다
+  if (from) {
+    const next = nextService(at)
     return {
-      title: `다음 배식은 ${MEAL_LABEL[next.meal]} ${clock(next.opensAt)}부터예요`,
-      detail,
-      tiles: ['동'],
+      title: '지금 출발하면 마감 전에 도착하기 어려워요',
+      detail: next ? nextServiceLine(next) : null,
+      tiles: [],
     }
   }
 
@@ -122,13 +158,17 @@ export function homeHeadline(at: Date): { title: string; detail: string | null; 
       ? `지금은 ${name}이 바로 드실 수 있어요`
       : `지금은 ${name}이 가장 빨라요, 약 ${Math.round(best.wait)}분 기다려요`
 
+  // 나머지 중 기다림이 있고 곧 한산해질 식당들을 식당 순서대로 잇는다
+  const later = open.flatMap((o) => {
+    if (o.hall === best.hall || o.wait < 3) return []
+    const rec = recommendTime(o.hall, o.meal, at)
+    return rec && rec.getTime() > at.getTime() ? [`${VENUES[o.hall].label}은 ${koreanTime(rec)}`] : []
+  })
   let detail: string | null = null
-  const other = open.find((o) => o.hall !== best.hall && o.wait >= 3)
-  const rec = other ? recommendTime(other.hall, other.meal, at) : null
-  if (other && rec && rec.getTime() > at.getTime()) {
-    detail = `${VENUES[other.hall].label}은 ${koreanTime(rec)}부터 한산해질 것으로 보여요`
+  if (later.length > 0) {
+    detail = `${later.join(', ')}부터 한산해질 것으로 보여요`
   } else if (open.length === 1 && best.hall === 'east' && isWestNewClosedToday(at)) {
     detail = '주말과 공휴일에는 동관만 운영해요'
   }
-  return { title, detail, tiles: TILES[best.hall] }
+  return { title, detail, tiles: [VENUES[best.hall].short] }
 }

@@ -34,6 +34,38 @@ test("demo sheet opens the staff screen and keeps ?at=", async ({ page }) => {
   await expect(page.getByRole("dialog")).toHaveCount(0)
 })
 
+test("demo sheet opens the ops screen and keeps ?at=", async ({ page }) => {
+  await page.goto("/?at=2026-10-14T12:20")
+  await page.getByRole("button", { name: "시연 시간" }).click()
+  await page
+    .getByRole("dialog", { name: "시연 시간" })
+    .getByRole("link", { name: "운영자 화면 열기" })
+    .click()
+  await expect(page).toHaveURL("/ops?at=2026-10-14T12:20")
+  await expect(
+    page.getByRole("heading", { level: 1, name: "운영자 화면" })
+  ).toBeVisible()
+  await expect(page.getByRole("heading", { level: 2 })).toHaveCount(5)
+})
+
+test("ops screen has no horizontal overflow in dark mode", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("babttae.theme", JSON.stringify("dark"))
+  )
+  await page.goto("/ops?at=2026-10-14T12:20")
+  await expect(page.locator("html")).toHaveClass(/dark/)
+  await expect(
+    page.getByRole("heading", { level: 1, name: "운영자 화면" })
+  ).toBeVisible()
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth
+    )
+  ).toBe(true)
+})
+
 test("unknown routes redirect home", async ({ page }) => {
   await page.goto("/no-such-page")
   await expect(page).toHaveURL("/")
@@ -46,7 +78,7 @@ test("no console errors on any route", async ({ page }) => {
     if (m.type() === "error") errors.push(m.text())
   })
   page.on("pageerror", (e) => errors.push(e.message))
-  for (const path of ["/", "/menu", "/map", "/alerts", "/staff"]) {
+  for (const path of ["/", "/menu", "/map", "/alerts", "/staff", "/ops"]) {
     await page.goto(`${path}?at=2026-10-14T12:20`)
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
   }
@@ -104,9 +136,14 @@ test("home lists every venue at demo Wed 12:20", async ({ page }) => {
   for (let i = 0; i < 88; i++) await page.keyboard.press("ArrowRight")
   await sheet.getByRole("button", { name: "이 시각으로 보기" }).click()
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "지금은 서관·신관이 바로 드실 수 있어요"
+    "지금은 신관이 바로 드실 수 있어요"
   )
-  for (const name of ["동관 직원식당", "서관·신관 직원식당", "간편식 도시락"]) {
+  for (const name of [
+    "동관 직원식당",
+    "서관 직원식당",
+    "신관 직원식당",
+    "간편식 도시락",
+  ]) {
     await expect(page.getByRole("listitem", { name })).toBeVisible()
   }
   expect(

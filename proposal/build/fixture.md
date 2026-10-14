@@ -1,5 +1,5 @@
 ---
-title: 아산 밥때
+title: 밥타임
 subtitle: 직원식당 통합 안내 서비스
 contest: 서울아산병원 직원 업무개선 아이디어 공모전
 author:

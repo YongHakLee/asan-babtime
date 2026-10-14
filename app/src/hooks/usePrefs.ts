@@ -1,9 +1,12 @@
 import { useCallback, useSyncExternalStore } from 'react'
 
+import type { BuildingId } from '@/domain/types'
 import {
   getFavorites,
   getSubscriptions,
+  getWorkBuilding,
   setSubscriptions,
+  setWorkBuilding,
   subscribePrefs,
   toggleFavorite,
   type Subscriptions,
@@ -18,10 +21,13 @@ function useStored<T>(read: () => T): T {
 export function usePrefs(): {
   favorites: string[]
   subscriptions: Subscriptions
+  workBuilding: BuildingId | null
   toggleFavorite: (name: string) => void
   setSubscriptions: (s: Subscriptions) => void
+  setWorkBuilding: (b: BuildingId | null) => void
 } {
   const favorites = useStored(getFavorites)
   const subscriptions = useStored(getSubscriptions)
-  return { favorites, subscriptions, toggleFavorite, setSubscriptions }
+  const workBuilding = useStored(getWorkBuilding)
+  return { favorites, subscriptions, workBuilding, toggleFavorite, setSubscriptions, setWorkBuilding }
 }

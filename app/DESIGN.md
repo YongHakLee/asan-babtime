@@ -1,4 +1,4 @@
-# 아산 밥때 디자인 시스템
+# 밥타임 디자인 시스템
 
 웹앱·제안서 공통 토큰. 색의 단일 원천은 `../design/tokens.css`이고, 앱은 `src/index.css`에서 이를 import해 shadcn 변수에 연결한다. 앱 코드에 HEX를 직접 쓰지 않는다.
 
@@ -8,20 +8,23 @@
 
 | 역할 | 라이트 | 다크 | 쓰임 |
 |---|---|---|---|
-| deep | `#004F51` | `#06393A` | 홈 상단 영역, 제안서 표지·제목 |
-| primary | `#00696D` | `#5CC3BC` | 버튼, 활성 탭, 그래프 |
-| primary-foreground | `#FFFFFF` | `#05302F` | primary 위 글자 |
-| background | `#EEF5F4` | `#071D1D` | 페이지 바탕(회색 대신 녹색빛) |
-| card / sheet | `#FFFFFF` | `#0C2928` | 시트, 목록 면 |
-| foreground (ink) | `#10302F` | `#E3F1EF` | 본문 글자(순검정 대신 녹색빛) |
-| muted-foreground | `#4C6563` | `#8FB0AD` | 보조 글자 |
-| accent / tint | `#E2EFEE` | `#103534` | 표 머리, 보조 면, 비활성 막대 |
-| border | `#D6E6E4` | `#1A3D3B` | 구분선 |
-| brand-orange | `#F18D00` | `#FFA62B` | "지금" 표시선, 예측 그래프 현재 막대, 표지 짧은 선 **세 곳만** |
-| status-ok (여유) | `#127A4B` | `#5FD39A` | |
-| status-mid (보통) | `#8A5B00` | `#F2C35B` | |
-| status-queue (줄 있음) | `#B4470C` | `#FF9D5C` | |
-| status-busy (혼잡) | `#B42318` | `#FF8A7E` | |
+| deep | `#004F51` | `#1D3C3B` | 홈 상단 영역, 제안서 표지·제목 |
+| deep-foreground | `#FFFFFF` | `#E6F0EE` | deep 위 글자 |
+| deep-muted | `#B3CACB` | `#B3CFCB` | deep 위 보조 글자(`text-deep-muted`) |
+| primary | `#00696D` | `#7CC4BD` | 버튼, 활성 탭, 그래프 |
+| primary-foreground | `#FFFFFF` | `#10302E` | primary 위 글자 |
+| background | `#EEF5F4` | `#161A1A` | 페이지 바탕(회색 대신 녹색빛) |
+| card / sheet | `#FFFFFF` | `#1F2424` | 시트, 목록 면 |
+| foreground (ink) | `#10302F` | `#DCE3E2` | 본문 글자(순검정 대신 녹색빛) |
+| muted-foreground | `#4C6563` | `#A8B4B2` | 보조 글자 |
+| accent / tint | `#E2EFEE` | `#283030` | 표 머리, 보조 면, 비활성 막대 |
+| border | `#D6E6E4` | `#353D3C` | 구분선 |
+| brand-orange | `#F18D00` | `#E9A23B` | "지금" 표시선, 예측 그래프 현재 막대, 표지 짧은 선 **세 곳만** |
+| status-ok (여유) | `#127A4B` | `#8BCFA6` | |
+| status-mid (보통) | `#8A5B00` | `#DCC27E` | |
+| status-queue (줄 있음) | `#B4470C` | `#E8A982` | |
+| status-busy (혼잡) | `#B42318` | `#E89C95` | |
+| status-{ok,mid,queue,busy}-tint | 상태색 12 / 28 / 44 / 60% + card | 상태색 8 / 18 / 32 / 46% + card | 평소 혼잡 패턴 칸 바탕(`bg-status-*-tint`). 단계가 오를수록 명도가 한쪽으로 변하고, 칸 안 foreground 대비는 라이트 최저 4.59, 다크 최저 4.64 |
 
 ### 테이크아웃 존 색
 
@@ -29,11 +32,11 @@
 
 | 존 | 라이트 면 / 글자 | 다크 면 / 글자 |
 |---|---|---|
-| zone-green (그린존, 2PICK) | `#DDF3DF` / `#1F6B2E` | `#163A22` / `#8FDCA0` |
-| zone-orange (오렌지존, 3PICK) | `#FFE6CC` / `#8A4A00` | `#3D2A12` / `#FFC07A` |
-| zone-purple (퍼플존, 4PICK) | `#EDE1FA` / `#5B3A8C` | `#2E2240` / `#CDB4F2` |
+| zone-green (그린존, 2PICK) | `#DDF3DF` / `#1F6B2E` | `#1E3326` / `#9CD3AC` |
+| zone-orange (오렌지존, 3PICK) | `#FFE6CC` / `#8A4A00` | `#3A2D1C` / `#EBC08A` |
+| zone-purple (퍼플존, 4PICK) | `#EDE1FA` / `#5B3A8C` | `#2C2737` / `#C9B8E6` |
 
-모든 글자색은 해당 바탕에서 WCAG AA(4.5:1) 이상을 확인했다(최저 4.86:1, 존 색 포함).
+라이트: 모든 글자색은 해당 바탕에서 WCAG AA(4.5:1) 이상(최저 4.86:1, 존 색 포함). 다크: 글자색은 카드 바탕에서 모두 7:1 이상(본문 12.07, 보조 7.36, 상태색 7.20 이상, 존 색 7.9, deep 위 보조 글자 7.21).
 
 ## shadcn 변수 연결
 

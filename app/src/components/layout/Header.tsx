@@ -31,7 +31,7 @@ export function Header() {
   return (
     <header className="bg-deep px-4 text-deep-foreground">
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 py-3">
-        <p className="text-base font-semibold">아산 밥때</p>
+        <p className="text-base font-semibold">밥타임</p>
 
         <nav aria-label="주요 메뉴" className="hidden md:block">
           <ul className="flex gap-1">

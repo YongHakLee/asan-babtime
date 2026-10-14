@@ -10,10 +10,10 @@ import {
   EmptyHeader,
 } from "@/components/ui/empty"
 import { Separator } from "@/components/ui/separator"
-import { SERVICE_WINDOWS, VENUES } from "@/data/restaurants"
+import { MENU_GROUPS, SERVICE_WINDOWS, VENUES } from "@/data/restaurants"
 import type { Course, DiningHallId, MealKey } from "@/domain/types"
 import { dayKind } from "@/lib/hours"
-import { getCourses } from "@/lib/menu"
+import { getCourses, ORIGIN_NOTE } from "@/lib/menu"
 import { isSoldOut, subscribeOverrides } from "@/lib/override"
 import { mockRating } from "@/lib/prefs"
 import { cn } from "@/lib/utils"
@@ -28,31 +28,40 @@ function hoursOn(hall: DiningHallId, meal: MealKey, date: Date): string[] {
   ).map((w) => `${w.start}–${w.end}`)
 }
 
-function useSoldOut(
-  hall: DiningHallId,
+/** 품절로 표시한 식당들. 문자열로 돌려 매번 같은 값이면 다시 그리지 않는다. */
+function useSoldOutHalls(
+  halls: DiningHallId[],
   meal: MealKey,
   course: string | undefined,
   date: Date
-): boolean {
-  return useSyncExternalStore(subscribeOverrides, () =>
-    isSoldOut(hall, meal, course, date)
+): DiningHallId[] {
+  const key = useSyncExternalStore(subscribeOverrides, () =>
+    halls.filter((h) => isSoldOut(h, meal, course, date)).join(",")
   )
+  return key ? (key.split(",") as DiningHallId[]) : []
+}
+
+/** 공통 메뉴 열에서는 일부 식당만 품절이면 그 식당 이름을 붙인다. */
+function soldOutLabel(halls: DiningHallId[], soldOut: DiningHallId[]): string {
+  if (soldOut.length === 0 || soldOut.length === halls.length) return "품절"
+  return `${soldOut.map((h) => VENUES[h].label).join("·")} 품절`
 }
 
 function CourseBlock({
-  hall,
+  halls,
   meal,
   course,
   date,
   rated,
 }: {
-  hall: DiningHallId
+  halls: DiningHallId[]
   meal: MealKey
   course: Course
   date: Date
   rated: boolean
 }) {
-  const soldOut = useSoldOut(hall, meal, course.label, date)
+  const soldOutHalls = useSoldOutHalls(halls, meal, course.label, date)
+  const soldOut = soldOutHalls.length > 0
   const [main, ...sides] = course.items
   const facts = exampleFacts(main)
   const rating = rated ? mockRating(main.name) : null
@@ -62,7 +71,11 @@ function CourseBlock({
       {(course.label || soldOut) && (
         <p className="flex items-baseline gap-2 pt-1 text-xs font-semibold">
           {course.label && <span className="text-primary">{course.label}</span>}
-          {soldOut && <span className="text-status-busy">품절</span>}
+          {soldOut && (
+            <span className="text-status-busy">
+              {soldOutLabel(halls, soldOutHalls)}
+            </span>
+          )}
         </p>
       )}
       <ul className="flex flex-col">
@@ -87,40 +100,49 @@ function CourseBlock({
 }
 
 function HallColumn({
-  hall,
+  group,
   meal,
   date,
   headingRef,
   onShowEast,
 }: {
-  hall: DiningHallId
+  group: "east" | "westNew"
   meal: MealKey
   date: Date
   headingRef?: Ref<HTMLHeadingElement>
   onShowEast?: () => void
 }) {
-  const venue = VENUES[hall]
-  const hours = hoursOn(hall, meal, date)
-  const all = getCourses(date, hall, meal)
+  // 같은 묶음의 식당은 메뉴와 운영시간이 같다
+  const halls = MENU_GROUPS[group].venues as DiningHallId[]
+  const [first] = halls
+  const title =
+    halls.length > 1 ? `${MENU_GROUPS[group].label} 공통` : VENUES[first].label
+  const hours = hoursOn(first, meal, date)
+  const all = getCourses(date, first, meal)
   // 운영하지 않는 날에도 서관 라이브코너는 따로 차려진다
   const courses =
     hours.length > 0 ? all : all.filter((c) => c.label?.startsWith(LIVE_CORNER))
 
   return (
-    <section aria-labelledby={`hall-${hall}`} className="min-w-0">
+    <section aria-labelledby={`hall-${group}`} className="min-w-0">
       <h3
-        id={`hall-${hall}`}
+        id={`hall-${group}`}
         ref={headingRef}
         tabIndex={-1}
         className="flex scroll-mt-4 items-center gap-2.5 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
       >
-        <BuildingTile
-          glyph={venue.short}
-          className="size-7 rounded-md text-sm"
-        />
+        <span className="flex shrink-0 gap-1">
+          {halls.map((h) => (
+            <BuildingTile
+              key={h}
+              glyph={VENUES[h].short}
+              className="size-7 rounded-md text-sm"
+            />
+          ))}
+        </span>
         <span className="flex min-w-0 flex-col">
           <span className="text-[0.9375rem] leading-tight font-bold tracking-tight">
-            {venue.label}
+            {title}
           </span>
           {hours.length > 0 && (
             <span className="mt-0.5 text-[0.6875rem] leading-none font-medium text-muted-foreground tabular-nums">
@@ -151,7 +173,7 @@ function HallColumn({
             <div key={course.label ?? i} className="flex flex-col gap-2">
               {i > 0 && <Separator />}
               <CourseBlock
-                hall={hall}
+                halls={halls}
                 meal={meal}
                 course={course}
                 date={date}
@@ -166,7 +188,7 @@ function HallColumn({
 }
 
 /**
- * 직원식당 비교. 중식은 동관과 서관·신관을 두 열로 나란히,
+ * 직원식당 비교. 중식은 동관과 서관·신관 공통 메뉴를 두 열로 나란히,
  * 그 밖의 끼니는 동관만 운영하므로 한 열로 보여 준다.
  */
 export function HallCompare({ meal, date }: { meal: MealKey; date: Date }) {
@@ -187,27 +209,34 @@ export function HallCompare({ meal, date }: { meal: MealKey; date: Date }) {
   }
 
   return (
-    <div
-      className={cn(
-        "grid gap-x-4 gap-y-6",
-        compare
-          ? "grid-cols-2 md:grid-cols-[repeat(2,minmax(0,24rem))] md:gap-x-12"
-          : "grid-cols-1 md:max-w-sm"
-      )}
-    >
-      <HallColumn
-        hall="east"
-        meal={meal}
-        date={date}
-        headingRef={eastHeading}
-      />
-      {compare && (
+    <div>
+      <div
+        className={cn(
+          "grid gap-x-4 gap-y-6",
+          compare
+            ? "grid-cols-2 md:grid-cols-[repeat(2,minmax(0,24rem))] md:gap-x-12"
+            : "grid-cols-1 md:max-w-sm"
+        )}
+      >
         <HallColumn
-          hall="westNew"
+          group="east"
           meal={meal}
           date={date}
-          onShowEast={showEast}
+          headingRef={eastHeading}
         />
+        {compare && (
+          <HallColumn
+            group="westNew"
+            meal={meal}
+            date={date}
+            onShowEast={showEast}
+          />
+        )}
+      </div>
+      {compare && (
+        <p className="mt-6 text-xs leading-snug text-muted-foreground">
+          {ORIGIN_NOTE}
+        </p>
       )}
     </div>
   )
