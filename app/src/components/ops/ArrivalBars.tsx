@@ -85,13 +85,17 @@ export function ArrivalBars({
   )
 }
 
-/** 막대 세 종류를 한 번만 설명하는 범례 */
-export function ArrivalLegend() {
+/** 막대 종류를 한 번만 설명하는 범례. 화면에 있는 종류만 보인다. */
+export function ArrivalLegend({ slots }: { slots: ArrivalSlot[] }) {
   const items = [
-    { label: "지난 구간", swatch: "bg-primary" },
-    { label: "지금", swatch: "bg-brand-orange" },
-    { label: "예측", swatch: "border border-primary bg-primary/15" },
-  ]
+    slots.some((s) => !s.now && !s.future) && { label: "지난 구간", swatch: "bg-primary" },
+    slots.some((s) => s.now) && { label: "지금", swatch: "bg-brand-orange" },
+    slots.some((s) => s.future) && {
+      label: "예측",
+      swatch: "border border-primary bg-primary/15",
+    },
+  ].filter((i) => !!i)
+  if (items.length === 0) return null
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
       {items.map((i) => (

@@ -85,14 +85,19 @@ function NowRow({ hall }: { hall: DiningHallId }) {
   const o = getActiveOverride(hall)
   const staff =
     source === "staff" && o
-      ? `직원 입력 ${LEVEL_LABEL[o.kind === "queue" ? "queue" : "ok"]}(${hm(new Date(o.at))})`
+      ? `직원 입력: ${LEVEL_LABEL[o.kind === "queue" ? "queue" : "ok"]}, ${hm(new Date(o.at))}`
       : "직원 입력 없음"
 
   if (meal && status?.kind === "open") {
     return (
       <HallLine
         hall={hall}
-        sub={`${MEAL_LABEL[meal]} 배식 중, ${hm(status.closesAt)}까지 · ${staff}`}
+        sub={
+          <>
+            <span className="block">{`${MEAL_LABEL[meal]} 배식 중이에요(${hm(status.closesAt)}까지)`}</span>
+            <span className="block">{staff}</span>
+          </>
+        }
         aside={<StatusText level={level} waitMinutes={waitMinutes} />}
       />
     )
@@ -160,7 +165,7 @@ function ArrivalsSection({ now }: { now: Date }) {
       title="오늘 시간대별 입장 추정"
       caption="10분마다 들어오는 인원을 모델로 추정한 모의 데이터예요. 세 식당 막대 높이는 같은 기준이에요."
     >
-      <ArrivalLegend />
+      <ArrivalLegend slots={HALLS.flatMap((h) => all[h])} />
       <div className="flex flex-col gap-5 pt-1">
         {HALLS.map((hall) => {
           const slots = all[hall]
@@ -185,7 +190,7 @@ function ArrivalsSection({ now }: { now: Date }) {
               <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-[0.8125rem]">
                 <span className="font-semibold">{name}</span>
                 <span className="text-xs text-muted-foreground tabular-nums">
-                  {`합계 약 ${num(total)}명 · 가장 많은 때 ${peak.time}`}
+                  {`약 ${num(total)}명, ${peak.time}에 가장 많아요`}
                 </span>
               </p>
               <ArrivalBars
@@ -308,7 +313,7 @@ function PrepSection({ now }: { now: Date }) {
                 </span>
                 {p.open && (
                   <span className="text-xs text-muted-foreground tabular-nums">
-                    {`가장 많은 때 ${p.peak} · 예상 이용 약 ${num(p.expected)}명`}
+                    {`${p.peak}에 가장 많고 약 ${num(p.expected)}명이 올 것으로 보여요`}
                   </span>
                 )}
               </p>

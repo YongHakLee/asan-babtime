@@ -34,6 +34,64 @@ describe("OpsPage", () => {
       expect(within(now).getByText(name)).toBeInTheDocument()
   })
 
+  it("writes status, totals and prep as sentences, not dot-joined meta", () => {
+    renderAt("2026-10-14T12:20", <OpsPage />)
+    const now = screen.getByRole("region", { name: "지금 상황" })
+    expect(
+      within(now).getByText("중식 배식 중이에요(15:00까지)")
+    ).toBeInTheDocument()
+    expect(within(now).getAllByText("직원 입력 없음")).toHaveLength(3)
+    const arrivals = screen.getByRole("region", {
+      name: "오늘 시간대별 입장 추정",
+    })
+    expect(
+      within(arrivals).getAllByText(/^약 [\d,]+명, \d{2}:\d{2}에 가장 많아요$/)
+    ).toHaveLength(3)
+    const prep = screen.getByRole("region", { name: "내일 준비 제안" })
+    expect(
+      within(prep).getAllByText(
+        /^\d{2}:\d{2}에 가장 많고 약 [\d,]+명이 올 것으로 보여요$/
+      )
+    ).toHaveLength(3)
+    expect(document.body.textContent).not.toMatch(/\S · \S/)
+  })
+
+  it("shows staff input on its own line", () => {
+    localStorage.setItem(
+      "babttae.overrides",
+      JSON.stringify({
+        east: {
+          hall: "east",
+          kind: "queue",
+          at: t("2026-10-14T12:10").getTime(),
+          realAt: Date.now(),
+        },
+      })
+    )
+    renderAt("2026-10-14T12:20", <OpsPage />)
+    const now = screen.getByRole("region", { name: "지금 상황" })
+    expect(within(now).getByText("직원 입력: 줄 있음, 12:10")).toBeInTheDocument()
+  })
+
+  it("legend lists only the bar kinds on screen", () => {
+    renderAt("2026-10-14T12:20", <OpsPage />)
+    const arrivals = screen.getByRole("region", {
+      name: "오늘 시간대별 입장 추정",
+    })
+    expect(within(arrivals).getByText("지금")).toBeInTheDocument()
+    expect(within(arrivals).getByText("예측")).toBeInTheDocument()
+  })
+
+  it("legend drops 지금 and 예측 after service", () => {
+    renderAt("2026-10-14T16:00", <OpsPage />)
+    const arrivals = screen.getByRole("region", {
+      name: "오늘 시간대별 입장 추정",
+    })
+    expect(within(arrivals).getByText("지난 구간")).toBeInTheDocument()
+    expect(within(arrivals).queryByText("지금")).toBeNull()
+    expect(within(arrivals).queryByText("예측")).toBeNull()
+  })
+
   it("shows an empty state when nothing is sold out", () => {
     renderAt("2026-10-14T12:20", <OpsPage />)
     expect(screen.getByText("오늘 품절 입력이 없어요")).toBeInTheDocument()

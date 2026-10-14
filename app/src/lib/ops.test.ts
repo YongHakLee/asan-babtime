@@ -66,7 +66,29 @@ describe('soldOutLog', () => {
   })
 })
 
+describe('soldOutLog malformed storage', () => {
+  it('treats a non-number `at` as missing', () => {
+    localStorage.setItem(
+      'babttae.soldout',
+      JSON.stringify([{ hall: 'east', meal: 'lunch', date: '2026-10-14', at: '12:10' }]),
+    )
+    expect(soldOutLog(t('2026-10-14T12:20'))[0]).toMatchObject({ label: '동관 중식', time: undefined })
+  })
+})
+
 describe('satisfaction', () => {
+  it('skips stored ratings with non-numeric stars or unknown leftover', () => {
+    const before = satisfaction(t('2026-10-14T12:20'))
+    localStorage.setItem(
+      'babttae.ratings',
+      JSON.stringify({
+        '2026-10-14:east:lunch': { stars: 'five', leftover: 'none' },
+        '2026-10-14:east:breakfast': { stars: 2, leftover: 'lots' },
+      }),
+    )
+    expect(satisfaction(t('2026-10-14T12:20'))).toEqual(before)
+  })
+
   it('is deterministic with shares adding up to 100', () => {
     const s = satisfaction(t('2026-10-14T12:20'))
     expect(s).toEqual(satisfaction(t('2026-10-14T12:20')))

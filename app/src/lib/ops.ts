@@ -91,7 +91,7 @@ export function soldOutLog(at: Date): SoldOutEntry[] {
       meal,
       course,
       label: [VENUES[hall].label, MEAL_LABEL[meal], course].filter(Boolean).join(' '),
-      time: inputAt === undefined ? undefined : hm(new Date(inputAt)),
+      time: typeof inputAt === 'number' ? hm(new Date(inputAt)) : undefined,
     }))
 }
 
@@ -138,7 +138,9 @@ export function satisfaction(at: Date): { avg: number; count: number; leftover: 
   for (const hall of HALLS) {
     for (const meal of MEALS) {
       const mine = getRating(`${ymd}:${hall}:${meal}`)
-      if (!mine) continue
+      // 형식이 다른 저장값(별점이 숫자가 아니거나 모르는 남김 정도)은 건너뛴다
+      if (!mine || typeof mine.stars !== 'number' || !Number.isFinite(mine.stars)) continue
+      if (!Object.hasOwn(left, mine.leftover)) continue
       stars += mine.stars
       count += 1
       left[mine.leftover] += 1
