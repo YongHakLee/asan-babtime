@@ -8,6 +8,8 @@ import {
 } from "react"
 
 import { createClock, type Clock } from "@/lib/clock"
+import { subscribeOverrides } from "@/lib/override"
+import { storage } from "@/lib/storage"
 
 const TICK_MS = 30_000
 
@@ -23,13 +25,35 @@ export type ClockValue = {
 
 export const ClockContext = createContext<ClockValue | null>(null)
 
-/** `?at=YYYY-MM-DDTHH:MM`(서울 시각)을 읽는다. 없거나 잘못된 값이면 null. */
+const ANCHOR_KEY = "demoAnchor"
+const ANCHOR_MAX_MS = 6 * 3_600_000
+
+/**
+ * `?at=YYYY-MM-DDTHH:MM`(서울 시각)을 읽는다. 없거나 잘못된 값이면 null.
+ * 같은 `at`로 연 탭들이 같은 시연 시각을 보도록, 처음 연 시점(realStart)을
+ * 저장소에 공유하고 거기서 흐른 시간만큼 더한다. 6시간이 지난 기준은 새로 잡는다.
+ */
 function readAtParam(): Date | null {
   if (typeof window === "undefined") return null
   const at = new URLSearchParams(window.location.search).get("at")
   if (!at) return null
-  const d = new Date(`${at}+09:00`)
-  return Number.isNaN(d.getTime()) ? null : d
+  const base = new Date(`${at}+09:00`)
+  if (Number.isNaN(base.getTime())) return null
+  const nowMs = Date.now()
+  const anchor = storage.get<{ at: string; realStart: number } | null>(
+    ANCHOR_KEY,
+    null
+  )
+  if (
+    anchor &&
+    anchor.at === at &&
+    nowMs >= anchor.realStart &&
+    nowMs - anchor.realStart < ANCHOR_MAX_MS
+  ) {
+    return new Date(base.getTime() + (nowMs - anchor.realStart))
+  }
+  storage.set(ANCHOR_KEY, { at, realStart: nowMs })
+  return base
 }
 
 export function ClockProvider({
@@ -89,6 +113,10 @@ export function ClockProvider({
     const id = setInterval(() => clock.tick(), TICK_MS)
     return () => clearInterval(id)
   }, [clock])
+
+  // 다른 탭의 직원 입력은 입력 시각(at)이 이 탭의 now 스냅샷보다 늦을 수 있다.
+  // 입력이 올 때 스냅샷을 새로 읽어 바로 유효하게 보이도록 한다.
+  useEffect(() => subscribeOverrides(() => clock.tick()), [clock])
 
   const value = useMemo<ClockValue>(
     () => ({ now, isDemo, demoVersion, setDemo: (at) => clock.setDemo(at) }),

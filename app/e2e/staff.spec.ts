@@ -19,6 +19,21 @@ test("staff input reflects on home in another tab", async ({ context }) => {
   ).toContainText("줄 있음")
 })
 
+test("staff opened first, home later still shows the input", async ({
+  context,
+}) => {
+  const staff = await context.newPage()
+  await staff.goto(`/staff?at=${AT}`)
+  await staff.waitForTimeout(1500)
+  const home = await context.newPage()
+  await home.goto(`/?at=${AT}`)
+  await staff.getByRole("button", { name: "서관·신관" }).click()
+  await staff.getByRole("button", { name: "줄 있음" }).click()
+  await expect(
+    home.getByRole("listitem", { name: /서관·신관 직원식당/ })
+  ).toContainText("줄 있음", { timeout: 3000 })
+})
+
 test("big buttons are at least 96px tall", async ({ page }) => {
   await page.goto(`/staff?at=${AT}`)
   for (const name of ["줄 있음", "여유"]) {

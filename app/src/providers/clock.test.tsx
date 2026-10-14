@@ -1,5 +1,5 @@
 import { act, render, screen } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { useClock } from "@/hooks/useClock"
 import { createClock } from "@/lib/clock"
@@ -62,7 +62,45 @@ describe("ClockProvider", () => {
 describe("ClockProvider ?at= query", () => {
   const setSearch = (s: string) =>
     window.history.replaceState(null, "", `/${s}`)
-  afterEach(() => setSearch(""))
+  beforeEach(() => localStorage.clear())
+  afterEach(() => {
+    setSearch("")
+    vi.useRealTimers()
+  })
+
+  const nowAfterMount = () => {
+    const r = render(
+      <ClockProvider>
+        <Probe />
+      </ClockProvider>
+    )
+    const v = shown()
+    r.unmount()
+    return v
+  }
+
+  it("tabs opened at different real times share one demo time", () => {
+    setSearch("?at=2026-10-14T12:20")
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(new Date("2026-10-14T03:00:00Z"))
+    const first = nowAfterMount()
+    vi.setSystemTime(new Date("2026-10-14T03:00:30Z"))
+    const second = nowAfterMount()
+    expect(first).toBe(new Date("2026-10-14T12:20:00+09:00").getTime())
+    expect(second - first).toBe(30_000)
+  })
+
+  it("resets the anchor when stale (over 6 h) or when at differs", () => {
+    setSearch("?at=2026-10-14T12:20")
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(new Date("2026-10-14T03:00:00Z"))
+    nowAfterMount()
+    vi.setSystemTime(new Date("2026-10-14T09:30:00Z"))
+    expect(nowAfterMount()).toBe(new Date("2026-10-14T12:20:00+09:00").getTime())
+    setSearch("?at=2026-10-14T18:00")
+    vi.setSystemTime(new Date("2026-10-14T09:31:00Z"))
+    expect(nowAfterMount()).toBe(new Date("2026-10-14T18:00:00+09:00").getTime())
+  })
 
   it("starts in demo at the Seoul time given by ?at=", () => {
     setSearch("?at=2026-10-14T12:20")
