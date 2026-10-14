@@ -1,5 +1,5 @@
 import { act, render, screen } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it } from "vitest"
 
 import { useClock } from "@/hooks/useClock"
 import { createClock } from "@/lib/clock"
@@ -56,5 +56,35 @@ describe("ClockProvider", () => {
     )
     expect(screen.getByTestId("d").textContent).toBe("true")
     expect(Math.abs(shown() - demo.getTime())).toBeLessThan(5000)
+  })
+})
+
+describe("ClockProvider ?at= query", () => {
+  const setSearch = (s: string) =>
+    window.history.replaceState(null, "", `/${s}`)
+  afterEach(() => setSearch(""))
+
+  it("starts in demo at the Seoul time given by ?at=", () => {
+    setSearch("?at=2026-10-14T12:20")
+    render(
+      <ClockProvider>
+        <Probe />
+      </ClockProvider>
+    )
+    expect(screen.getByTestId("d").textContent).toBe("true")
+    const demo = new Date("2026-10-14T12:20:00+09:00").getTime()
+    expect(shown()).toBeGreaterThanOrEqual(demo)
+    expect(shown()).toBeLessThan(demo + 5000)
+    expect(window.location.search).toBe("?at=2026-10-14T12:20")
+  })
+
+  it("ignores an invalid ?at=", () => {
+    setSearch("?at=not-a-time")
+    render(
+      <ClockProvider>
+        <Probe />
+      </ClockProvider>
+    )
+    expect(screen.getByTestId("d").textContent).toBe("false")
   })
 })

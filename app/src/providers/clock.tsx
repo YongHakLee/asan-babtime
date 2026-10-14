@@ -23,6 +23,15 @@ export type ClockValue = {
 
 export const ClockContext = createContext<ClockValue | null>(null)
 
+/** `?at=YYYY-MM-DDTHH:MM`(서울 시각)을 읽는다. 없거나 잘못된 값이면 null. */
+function readAtParam(): Date | null {
+  if (typeof window === "undefined") return null
+  const at = new URLSearchParams(window.location.search).get("at")
+  if (!at) return null
+  const d = new Date(`${at}+09:00`)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
 export function ClockProvider({
   children,
   clock: injected,
@@ -34,7 +43,9 @@ export function ClockProvider({
 }) {
   const [own] = useState<Clock>(() => {
     const c = createClock()
-    if (initialDemo) c.setDemo(initialDemo)
+    // 앱 최상위(주입·initialDemo 없음)에서만 주소의 ?at=을 따른다
+    const demo = initialDemo ?? (injected ? null : readAtParam())
+    if (demo) c.setDemo(demo)
     return c
   })
   const clock = injected ?? own

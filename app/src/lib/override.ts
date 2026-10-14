@@ -22,7 +22,7 @@ export interface SoldOut {
 const OVERRIDE_KEY = 'overrides'
 const SOLDOUT_KEY = 'soldout'
 const CHANNEL = 'babttae'
-const TTL_MS = 15 * 60_000
+export const OVERRIDE_TTL_MS = 15 * 60_000
 
 type OverrideMap = Partial<Record<DiningHallId, Override>>
 
@@ -49,7 +49,7 @@ export function getActiveOverride(hall: DiningHallId, at: Date): Override | null
   const o = storage.get<OverrideMap>(OVERRIDE_KEY, {})[hall]
   if (!o) return null
   const age = at.getTime() - o.at
-  return age >= 0 && age < TTL_MS ? o : null
+  return age >= 0 && age < OVERRIDE_TTL_MS ? o : null
 }
 
 const sameSoldOut = (a: SoldOut, b: SoldOut) =>
