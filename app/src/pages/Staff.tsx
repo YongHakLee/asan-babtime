@@ -239,7 +239,7 @@ export default function StaffPage() {
           >
             검수 직원 화면
           </h1>
-          <p className="mt-1 text-xs text-deep-foreground/70">
+          <p className="mt-1 text-xs text-deep-muted">
             입구 상황을 누르면 직원들 화면에 바로 반영돼요. 15분 동안 유지돼요
           </p>
         </div>

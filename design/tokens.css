@@ -1,5 +1,5 @@
 /*
- * 아산 밥때 디자인 토큰 (웹앱·제안서 공통, 색의 단일 원천)
+ * 밥타임 디자인 토큰 (웹앱·제안서 공통, 색의 단일 원천)
  * 근거: docs/superpowers/specs/2026-10-14-asan-cafeteria-design.md 3.6
  * 서체 로드(@font-face)는 이 파일에 두지 않는다. 앱과 제안서가 각자 로드한다.
  */
@@ -7,6 +7,7 @@
 :root {
   --deep: #004f51;
   --deep-foreground: #ffffff;
+  --deep-muted: #b3cacb;
   --primary: #00696d;
   --primary-foreground: #ffffff;
   --background: #eef5f4;
@@ -31,27 +32,28 @@
 }
 
 .dark {
-  --deep: #06393a;
-  --deep-foreground: #ffffff;
-  --primary: #5cc3bc;
-  --primary-foreground: #05302f;
-  --background: #071d1d;
-  --card: #0c2928;
-  --foreground: #e3f1ef;
-  --muted-foreground: #8fb0ad;
-  --accent: #103534;
-  --border: #1a3d3b;
-  --brand-orange: #ffa62b;
+  --background: #161a1a;
+  --card: #1f2424;
+  --deep: #1d3c3b;
+  --deep-foreground: #e6f0ee;
+  --deep-muted: #b3cfcb;
+  --foreground: #dce3e2;
+  --muted-foreground: #a8b4b2;
+  --primary: #7cc4bd;
+  --primary-foreground: #10302e;
+  --accent: #283030;
+  --border: #353d3c;
+  --brand-orange: #e9a23b;
 
-  --status-ok: #5fd39a;
-  --status-mid: #f2c35b;
-  --status-queue: #ff9d5c;
-  --status-busy: #ff8a7e;
+  --status-ok: #8bcfa6;
+  --status-mid: #dcc27e;
+  --status-queue: #e8a982;
+  --status-busy: #e89c95;
 
-  --zone-green-bg: #163a22;
-  --zone-green-fg: #8fdca0;
-  --zone-orange-bg: #3d2a12;
-  --zone-orange-fg: #ffc07a;
-  --zone-purple-bg: #2e2240;
-  --zone-purple-fg: #cdb4f2;
+  --zone-green-bg: #1e3326;
+  --zone-green-fg: #9cd3ac;
+  --zone-orange-bg: #3a2d1c;
+  --zone-orange-fg: #ebc08a;
+  --zone-purple-bg: #2c2737;
+  --zone-purple-fg: #c9b8e6;
 }

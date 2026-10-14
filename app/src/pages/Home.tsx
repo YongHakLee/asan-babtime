@@ -244,7 +244,7 @@ export default function HomePage() {
             {title}
           </h1>
           {detail && (
-            <p className="mt-2 text-[0.8125rem] leading-normal text-pretty text-deep-foreground/70 lg:mt-4 lg:text-[0.9375rem]">
+            <p className="mt-2 text-[0.8125rem] leading-normal text-pretty text-deep-muted lg:mt-4 lg:text-[0.9375rem]">
               {detail}
             </p>
           )}

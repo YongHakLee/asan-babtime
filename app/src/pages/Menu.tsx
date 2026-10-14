@@ -189,7 +189,7 @@ export default function MenuPage() {
               >
                 메뉴
               </h1>
-              <p className="text-xs text-deep-foreground/70">
+              <p className="text-xs text-deep-muted">
                 {MENU_WEEK_LABEL}
               </p>
             </div>

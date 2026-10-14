@@ -294,7 +294,7 @@ export default function AlertsPage() {
           >
             알림
           </h1>
-          <p className="text-xs text-deep-foreground/70">
+          <p className="text-xs text-deep-muted">
             필요한 알림만 골라 받아요
           </p>
         </div>

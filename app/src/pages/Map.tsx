@@ -68,7 +68,7 @@ export default function MapPage() {
           >
             지도
           </h1>
-          <p className="text-xs text-deep-foreground/70">
+          <p className="text-xs text-deep-muted">
             식당 위치와 운영시간
           </p>
         </div>
