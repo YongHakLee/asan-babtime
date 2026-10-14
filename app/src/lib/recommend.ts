@@ -1,10 +1,11 @@
 import { DINING_HALLS as HALLS, VENUES } from '@/data/restaurants'
-import type { DiningHallId, MealKey, Venue } from '@/domain/types'
+import type { BuildingId, DiningHallId, MealKey, Venue } from '@/domain/types'
 import { getActiveMeal, getNextService, getServiceStatus } from '@/lib/hours'
 import { dayPopularity, getCourses, summary } from '@/lib/menu'
 import { getActiveOverride, overrideRemainingMs } from '@/lib/override'
 import { simulateQueue } from '@/lib/queue'
 import { effectiveWait } from '@/lib/status'
+import { fastestHall } from '@/lib/walk'
 
 const MIN = 60_000
 export const MEAL_LABEL: Record<MealKey, string> = {
@@ -90,7 +91,23 @@ const isWestNewClosedToday = (at: Date) =>
 
 type Tile = Venue['short']
 
-export function homeHeadline(at: Date): { title: string; detail: string | null; tiles: Tile[] } {
+export function homeHeadline(
+  at: Date,
+  from?: BuildingId | null,
+): { title: string; detail: string | null; tiles: Tile[] } {
+  // 근무 건물이 있으면 도보 + 도착 시 대기로 고른다. 도착 시 연 식당이 없으면 기존 규칙으로.
+  const fast = from ? fastestHall(at, from) : null
+  if (fast) {
+    const v = VENUES[fast.hall]
+    const arrival =
+      fast.waitOnArrival < 2 ? '바로 드실 수 있어요' : `약 ${Math.round(fast.waitOnArrival)}분 기다려요`
+    return {
+      title: `지금 출발하면 ${v.label}이 가장 빨라요`,
+      detail: `걸어서 ${fast.walk}분, 도착하면 ${arrival}`,
+      tiles: [v.short],
+    }
+  }
+
   const open = HALLS.flatMap((hall) => {
     const meal = getActiveMeal(hall, at)
     if (!meal || getServiceStatus(hall, meal, at).kind !== 'open') return []

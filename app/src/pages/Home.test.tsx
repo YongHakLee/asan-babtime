@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { describe, expect, it } from "vitest"
 
 import Home from "@/pages/Home"
@@ -109,6 +110,70 @@ describe("Home", () => {
   it("labels prediction as simulation", () => {
     renderAt("2026-10-14T12:20", <Home />)
     expect(screen.getByText("모의 데이터 기반 예측 시연")).toBeInTheDocument()
+  })
+
+  it("sets a work building from the chip and recommends by walk + wait", async () => {
+    const user = userEvent.setup()
+    renderAt("2026-10-14T12:20", <Home />)
+    // 미설정이면 줄에 도보 표기가 없다
+    expect(screen.queryByText(/걸어서/)).toBeNull()
+    await user.click(screen.getByRole("button", { name: "근무 건물: 미설정" }))
+    const sheet = screen.getByRole("dialog", { name: "근무 건물" })
+    const options = within(sheet).getAllByRole("button", { pressed: false })
+    expect(options.map((b) => b.textContent)).toEqual([
+      "동관",
+      "서관",
+      "신관",
+      "교육연구관",
+      "아산생명과학연구원",
+    ])
+    await user.click(within(sheet).getByRole("button", { name: "서관" }))
+
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "지금 출발하면 신관이 가장 빨라요"
+    )
+    expect(
+      screen.getByText("걸어서 4분, 도착하면 바로 드실 수 있어요")
+    ).toBeInTheDocument()
+    const nw = screen.getByRole("listitem", { name: "신관 직원식당" })
+    expect(within(nw).getByText(/걸어서 4분/)).toHaveTextContent("추정")
+    expect(
+      within(screen.getByRole("listitem", { name: "동관 직원식당" })).getByText(
+        /걸어서 7분/
+      )
+    ).toBeInTheDocument()
+    // 도시락 줄에는 도보 표기를 붙이지 않는다
+    expect(
+      within(
+        screen.getByRole("listitem", { name: "간편식 도시락" })
+      ).queryByText(/걸어서/)
+    ).toBeNull()
+    expect(
+      screen.getByRole("button", { name: "근무 건물: 서관" })
+    ).toBeInTheDocument()
+  })
+
+  it("clears the work building back to the default rule", async () => {
+    const user = userEvent.setup()
+    localStorage.setItem("babttae.workBuilding", '"west"')
+    renderAt("2026-10-14T12:20", <Home />)
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "지금 출발하면 신관이 가장 빨라요"
+    )
+    await user.click(screen.getByRole("button", { name: "근무 건물: 서관" }))
+    const sheet = screen.getByRole("dialog", { name: "근무 건물" })
+    expect(within(sheet).getByRole("button", { name: "서관" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    )
+    await user.click(within(sheet).getByRole("button", { name: "설정 지우기" }))
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "지금은 신관이 바로 드실 수 있어요"
+    )
+    expect(
+      screen.getByRole("button", { name: "근무 건물: 미설정" })
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/걸어서/)).toBeNull()
   })
 
   it("has a single h1", () => {

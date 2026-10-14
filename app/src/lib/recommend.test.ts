@@ -106,3 +106,23 @@ describe('three dining halls', () => {
   })
   it('Saturday: only east', () => expect(homeHeadline(t('2026-10-17T12:20')).detail).toBe('주말과 공휴일에는 동관만 운영해요'))
 })
+
+describe('headline with a work building', () => {
+  beforeEach(() => localStorage.clear())
+  it('headline with building', () =>
+    expect(homeHeadline(t('2026-10-14T12:20'), 'west')).toMatchObject({
+      title: '지금 출발하면 신관이 가장 빨라요',
+      detail: '걸어서 4분, 도착하면 바로 드실 수 있어요',
+      tiles: ['신'],
+    }))
+  it('says the wait on arrival when there is one', () => {
+    // 동관에서 12:00 출발: 동관은 기다려도 걸어서 8분인 신관보다 빠르다
+    const h = homeHeadline(t('2026-10-14T12:00'), 'east')
+    expect(h.title).toBe('지금 출발하면 동관이 가장 빨라요')
+    expect(h.detail).toBe('걸어서 2분, 도착하면 약 6분 기다려요')
+  })
+  it('falls back when nothing open', () =>
+    expect(homeHeadline(t('2026-10-14T15:30'), 'west').title).toBe('다음 배식은 석식 17:30부터예요'))
+  it('null building keeps the existing rule', () =>
+    expect(homeHeadline(t('2026-10-14T12:20'), null).title).toBe('지금은 신관이 바로 드실 수 있어요'))
+})

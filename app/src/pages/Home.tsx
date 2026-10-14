@@ -7,15 +7,18 @@ import {
 import { ForecastBars } from "@/components/common/ForecastBars"
 import { ServiceStrip } from "@/components/common/ServiceStrip"
 import { StatusLines, StatusText } from "@/components/common/StatusText"
+import { WorkBuildingChip } from "@/components/home/WorkBuildingSheet"
 import { Separator } from "@/components/ui/separator"
 import { DINING_HALLS as HALLS, VENUES } from "@/data/restaurants"
 import type {
+  BuildingId,
   DiningHallId,
   MealKey,
   ServiceStatus,
   VenueId,
 } from "@/domain/types"
 import { useClock } from "@/hooks/useClock"
+import { usePrefs } from "@/hooks/usePrefs"
 import { useVenueStatus } from "@/hooks/useVenueStatus"
 import {
   formatMinutes,
@@ -31,6 +34,7 @@ import {
 } from "@/lib/hours"
 import { getCourses, MENU_WEEK_LABEL, summary } from "@/lib/menu"
 import { forecast, homeHeadline, MEAL_LABEL } from "@/lib/recommend"
+import { walkMinutes } from "@/lib/walk"
 
 const MEALS: MealKey[] = ["breakfast", "lunch", "dinner", "mobile", "lateNight"]
 const DAY_MS = 86_400_000
@@ -84,6 +88,7 @@ function Row({
   menu,
   status,
   extra,
+  walk,
 }: {
   name: string
   glyph: BuildingGlyph
@@ -91,14 +96,23 @@ function Row({
   menu: string
   status: ReactNode
   extra?: ReactNode
+  /** 근무 건물에서 걸어서 걸리는 시간(분). 설정했을 때만 */
+  walk?: number
 }) {
   return (
     <div className="grid grid-cols-[2.125rem_minmax(0,1fr)_auto] items-start gap-x-3 py-3.5">
       <BuildingTile glyph={glyph} tone={tone} />
       <div className="min-w-0 pt-px">
-        <h2 className="text-[0.9375rem] leading-snug font-semibold tracking-tight">
-          {name}
-        </h2>
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          <h2 className="text-[0.9375rem] leading-snug font-semibold tracking-tight">
+            {name}
+          </h2>
+          {walk !== undefined && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              걸어서 {walk}분(추정)
+            </span>
+          )}
+        </div>
         {menu && (
           <p className="mt-0.5 text-[0.8125rem] leading-snug text-muted-foreground">
             {menu}
@@ -111,10 +125,17 @@ function Row({
   )
 }
 
-function HallRow({ hall }: { hall: DiningHallId }) {
+function HallRow({
+  hall,
+  from,
+}: {
+  hall: DiningHallId
+  from: BuildingId | null
+}) {
   const { now } = useClock()
   const { meal, status, level, waitMinutes } = useVenueStatus(hall)
   const venue = VENUES[hall]
+  const walk = from ? walkMinutes(from, hall) : undefined
 
   if (meal && status?.kind === "open") {
     const busy = level === "queue" || level === "busy"
@@ -122,6 +143,7 @@ function HallRow({ hall }: { hall: DiningHallId }) {
       <Row
         name={venue.name}
         glyph={venue.short}
+        walk={walk}
         menu={summary(getCourses(status.opensAt, hall, meal))}
         status={<StatusText level={level} waitMinutes={waitMinutes} />}
         extra={busy && <ForecastBars points={forecast(hall, meal, now)} />}
@@ -134,6 +156,7 @@ function HallRow({ hall }: { hall: DiningHallId }) {
     <Row
       name={venue.name}
       glyph={venue.short}
+      walk={walk}
       menu={idle.menu}
       status={
         <StatusLines
@@ -216,7 +239,8 @@ function stripFor(now: Date): { meal: MealKey; status: ServiceStatus } | null {
 
 export default function HomePage() {
   const { now } = useClock()
-  const { title, detail, tiles } = homeHeadline(now)
+  const { workBuilding } = usePrefs()
+  const { title, detail, tiles } = homeHeadline(now, workBuilding)
   const strip = stripFor(now)
 
   return (
@@ -254,12 +278,13 @@ export default function HomePage() {
         aria-label="식당별 상황"
         className="relative -mt-[18px] flex flex-1 flex-col rounded-t-3xl bg-card px-4 pt-4 pb-6 lg:mt-0 lg:rounded-tr-none lg:pt-10 lg:pr-[max(1rem,calc((100cqw_-_64rem)/2))] lg:pl-12"
       >
+        <WorkBuildingChip />
         {strip && <ServiceStrip meal={strip.meal} status={strip.status} />}
         <ul className="mt-1.5 flex flex-col">
           {HALLS.map((hall, i) => (
             <li key={hall} aria-label={VENUES[hall].name}>
               {i > 0 && <Separator />}
-              <HallRow hall={hall} />
+              <HallRow hall={hall} from={workBuilding} />
             </li>
           ))}
           <li aria-label={VENUES.boxLunch.name}>
