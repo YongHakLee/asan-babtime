@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { requestPermission } from "@/lib/alerts"
+import { storage } from "@/lib/storage"
 import { getRating, getSubscriptions, rateMeal } from "@/lib/prefs"
 import AlertsPage from "@/pages/Alerts"
 import { renderAt } from "@/test/render"
@@ -22,6 +23,24 @@ beforeEach(() => {
 })
 
 describe("Alerts", () => {
+  it("clicking the row description toggles the switch", async () => {
+    renderAt("2026-10-14T12:20", <AlertsPage />)
+    await user.click(screen.getByText("목요일 16:30에 알려드려요"))
+    expect(getSubscriptions().boxLunchDeadline).toBe(true)
+    expect(
+      screen.getByRole("switch", { name: "도시락 예약 마감 전" })
+    ).toBeChecked()
+  })
+
+  it("notes when storage is not persistent", () => {
+    vi.spyOn(storage, "isPersistent").mockReturnValue(false)
+    renderAt("2026-10-14T12:20", <AlertsPage />)
+    expect(
+      screen.getByText("이 브라우저에서는 설정이 저장되지 않아요")
+    ).toBeInTheDocument()
+    vi.restoreAllMocks()
+  })
+
   it("switch persists subscription", async () => {
     renderAt("2026-10-14T12:20", <AlertsPage />)
     await user.click(

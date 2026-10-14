@@ -12,6 +12,7 @@ import {
   FieldLabel,
   FieldLegend,
   FieldSet,
+  FieldTitle,
 } from "@/components/ui/field"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "@/components/ui/toast"
@@ -125,25 +126,31 @@ function SubscriptionSection() {
       )}
       <FieldGroup className="gap-0">
         {ROWS.map((r) => (
-          <Field
+          <FieldLabel
             key={r.id}
-            orientation="horizontal"
-            className="min-h-14 items-center border-b border-border py-3.5"
+            htmlFor={r.id}
+            className="min-h-14 border-b border-border font-normal has-[>[data-slot=field]]:rounded-none has-[>[data-slot=field]]:border-x-0 has-[>[data-slot=field]]:border-t-0 has-[>[data-slot=field]]:not-has-[:disabled,[data-disabled]]:hover:bg-transparent *:data-[slot=field]:min-h-14 *:data-[slot=field]:px-0 *:data-[slot=field]:py-3"
           >
-            <FieldContent>
-              <FieldLabel htmlFor={r.id} className="text-[0.9375rem]">
-                {r.label}
-              </FieldLabel>
-              {r.description && (
-                <FieldDescription>{r.description}</FieldDescription>
-              )}
-            </FieldContent>
-            <Switch
-              id={r.id}
-              checked={isOn(subscriptions, r)}
-              onCheckedChange={(on) => void change(r, on)}
-            />
-          </Field>
+            <Field orientation="horizontal" className="items-center">
+              <FieldContent>
+                <FieldTitle
+                  id={`${r.id}-title`}
+                  className="text-[0.9375rem] font-normal"
+                >
+                  {r.label}
+                </FieldTitle>
+                {r.description && (
+                  <FieldDescription>{r.description}</FieldDescription>
+                )}
+              </FieldContent>
+              <Switch
+                id={r.id}
+                aria-labelledby={`${r.id}-title`}
+                checked={isOn(subscriptions, r)}
+                onCheckedChange={(on) => void change(r, on)}
+              />
+            </Field>
+          </FieldLabel>
         ))}
       </FieldGroup>
     </section>
