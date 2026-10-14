@@ -43,9 +43,6 @@ const src = fs.readFileSync(input, 'utf8');
 const { meta, body } = parseFrontMatter(src);
 const md = new MarkdownIt({ html: true, typographer: false }).use(footnote);
 let html = placeFootnotes(md.render(body));
-// 요약 다음에 오는 1장은 새 쪽으로 넘기지 않는다.
-html = html.replace(/<h2>(\s*1\.[^<]*)<\/h2>/, (all, t, off) =>
-  /<h2[^>]*>/.test(html.slice(0, off)) ? `<h2 class="keep-flow">${t}</h2>` : all);
 
 const tokensAll = fs.readFileSync(path.join(root, 'design/tokens.css'), 'utf8');
 const tokens = tokensAll.match(/:root\s*\{[^}]*\}/)[0]; // .dark 제외

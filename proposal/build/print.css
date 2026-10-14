@@ -70,7 +70,7 @@ h2 {
   border-bottom: 1.5px solid var(--deep);
   break-before: page;
 }
-.doc > h2:first-child, h2.keep-flow { break-before: auto; }
+.doc > h2:first-child { break-before: auto; }
 h3 { margin: 9mm 0 3mm; font-size: 13.5pt; font-weight: 700; line-height: 1.45; }
 h4 { margin: 6mm 0 2mm; font-size: 11.5pt; font-weight: 700; color: var(--primary); }
 p { margin: 0 0 3.5mm; }
