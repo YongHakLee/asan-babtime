@@ -59,6 +59,11 @@ const BUTTONS: {
   },
 ]
 
+const KIND_LABEL: Record<OverrideKind, string> = {
+  queue: "줄 있음",
+  clear: "여유",
+}
+
 const DOT: Record<OverrideKind, string> = {
   queue: "text-status-queue",
   clear: "text-status-ok",
@@ -114,7 +119,11 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
           )
         })}
       </div>
-      <p aria-live="polite" className="text-sm text-muted-foreground">
+      {/* 입력하거나 풀릴 때만 읽어 준다. 매분 바뀌는 남은 시간은 라이브 영역 밖에 둔다 */}
+      <p role="status" className="sr-only">
+        {active ? `${KIND_LABEL[active.kind]} 입력됨` : ""}
+      </p>
+      <p className="text-sm text-muted-foreground">
         {active
           ? `${formatMinutes(seoulMinutes(new Date(active.at)))}에 입력, ${left}분 남음`
           : "지금은 예측값을 보여주고 있어요"}

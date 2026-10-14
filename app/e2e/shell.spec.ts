@@ -53,6 +53,47 @@ test("no console errors on any route", async ({ page }) => {
   expect(errors).toEqual([])
 })
 
+test("saved or system dark theme applies before the app script runs", async ({
+  page,
+}) => {
+  // 앱 스크립트를 막아도 index.html의 인라인 스크립트가 dark를 먼저 붙인다
+  await page.route("**/src/main.tsx", (r) => r.abort())
+  await page.addInitScript(() =>
+    localStorage.setItem("babttae.theme", JSON.stringify("dark"))
+  )
+  await page.goto("/")
+  await expect(page.locator("html")).toHaveClass(/dark/)
+
+  await page.addInitScript(() =>
+    localStorage.setItem("babttae.theme", JSON.stringify("light"))
+  )
+  await page.emulateMedia({ colorScheme: "dark" })
+  await page.reload()
+  await expect(page.locator("html")).not.toHaveClass(/dark/)
+
+  await page.addInitScript(() =>
+    localStorage.setItem("babttae.theme", JSON.stringify("system"))
+  )
+  await page.reload()
+  await expect(page.locator("html")).toHaveClass(/dark/)
+})
+
+test("toasts sit above the mobile tab bar", async ({ page }, info) => {
+  test.skip(info.project.name !== "mobile")
+  await page.goto("/menu?at=2026-10-14T12:20")
+  await page.getByRole("tab", { name: "도시락" }).click()
+  await page.getByRole("button", { name: "AMIS3.0에서 예약하기" }).click()
+  const toast = page.locator("[data-slot=toast]").first()
+  await expect(toast).toBeVisible()
+  await page.waitForTimeout(600) // 등장 전환이 끝난 자리
+  const t = (await toast.boundingBox())!
+  const bar = (await page
+    .getByRole("navigation", { name: "주요 메뉴" })
+    .last()
+    .boundingBox())!
+  expect(t.y + t.height).toBeLessThanOrEqual(bar.y)
+})
+
 test("home lists every venue at demo Wed 12:20", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("button", { name: "시연 시간" }).click()

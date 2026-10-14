@@ -21,7 +21,8 @@ function ToastViewport({ className, ...props }: ToastPrimitive.Viewport.Props) {
     <ToastPrimitive.Viewport
       data-slot="toast-viewport"
       className={cn(
-        "pointer-events-none fixed inset-x-4 bottom-4 z-50 mx-auto w-auto max-w-sm outline-none sm:right-4 sm:left-auto sm:mx-0 sm:w-full",
+        // 로컬 수정: 모바일 탭 막대(3.5rem + 안전 영역) 위에 띄우고, 막대가 없는 md 이상은 안전 영역만 피한다
+        "pointer-events-none fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 mx-auto w-auto max-w-sm outline-none sm:right-4 sm:left-auto sm:mx-0 sm:w-full md:bottom-[calc(1rem+env(safe-area-inset-bottom))]",
         className
       )}
       {...props}

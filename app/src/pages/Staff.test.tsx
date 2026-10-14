@@ -107,6 +107,15 @@ describe("Staff", () => {
     act(() => clock.setDemo(t("2026-10-16T18:00")))
     expect(screen.getByText("12:20에 입력, 14분 남음")).toBeInTheDocument()
 
+    // 남은 분은 라이브 영역 밖이라 매분 다시 읽지 않고, 라이브 영역은 입력 상태만 알린다
+    const entrance = screen.getByRole("region", { name: "입구 상황" })
+    expect(within(entrance).getByRole("status")).toHaveTextContent(
+      /^줄 있음 입력됨$/
+    )
+    expect(
+      screen.getByText("12:20에 입력, 14분 남음").closest("[aria-live]")
+    ).toBeNull()
+
     vi.setSystemTime(new Date("2026-10-20T01:15:00Z"))
     act(() => clock.tick())
     expect(
