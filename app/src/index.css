@@ -1,0 +1,99 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.css";
+@import "../../design/tokens.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans:
+    "Wanted Sans Variable", "Wanted Sans", system-ui, -apple-system,
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+
+  /* shadcn 슬롯이 없는 토큰 (design/tokens.css) */
+  --color-deep: var(--deep);
+  --color-brand-orange: var(--brand-orange);
+  --color-status-ok: var(--status-ok);
+  --color-status-mid: var(--status-mid);
+  --color-status-queue: var(--status-queue);
+  --color-status-busy: var(--status-busy);
+  --color-zone-green-bg: var(--zone-green-bg);
+  --color-zone-green-fg: var(--zone-green-fg);
+  --color-zone-orange-bg: var(--zone-orange-bg);
+  --color-zone-orange-fg: var(--zone-orange-fg);
+  --color-zone-purple-bg: var(--zone-purple-bg);
+  --color-zone-purple-fg: var(--zone-purple-fg);
+
+  /* 모서리 위계: 시트 22px, 타일 8px(rounded-lg), 버튼·입력은 maia 기본 */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: 22px;
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/*
+ * shadcn 변수를 design/tokens.css 역할에 연결한다.
+ * var() 참조라 .dark 에서 tokens.css 값이 바뀌면 함께 바뀐다.
+ */
+:root {
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --secondary: var(--accent);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--accent);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--status-busy);
+  --input: var(--border);
+  --ring: var(--primary);
+  --chart-1: var(--primary);
+  --chart-2: var(--brand-orange);
+  --chart-3: var(--status-ok);
+  --chart-4: var(--status-queue);
+  --chart-5: var(--muted-foreground);
+  --radius: 0.625rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Wanted Sans Variable", var(--font-sans);
+    font-feature-settings: "tnum";
+    word-break: keep-all;
+  }
+}
