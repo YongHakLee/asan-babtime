@@ -123,6 +123,15 @@ describe('headline with a work building', () => {
   })
   it('falls back when nothing open', () =>
     expect(homeHeadline(t('2026-10-14T15:30'), 'west').title).toBe('다음 배식은 석식 17:30부터예요'))
+  it('nothing reachable before closing: says so and names the next service (아산생명과학연구원, Wed 14:55)', () =>
+    expect(homeHeadline(t('2026-10-14T14:55'), 'asanLife')).toMatchObject({
+      title: '지금 출발하면 마감 전에 도착하기 어려워요',
+      detail: '다음 배식은 석식 17:30부터예요',
+    }))
+  it('the same moment without a work building still recommends the open hall', () =>
+    expect(homeHeadline(t('2026-10-14T14:55')).title).toMatch(/^지금은 동관이/))
+  it('a nearby building still reaches east before closing at 14:55', () =>
+    expect(homeHeadline(t('2026-10-14T14:55'), 'east').title).toBe('지금 출발하면 동관이 가장 빨라요'))
   it('null building keeps the existing rule', () =>
     expect(homeHeadline(t('2026-10-14T12:20'), null).title).toBe('지금은 신관이 바로 드실 수 있어요'))
 })

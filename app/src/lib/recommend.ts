@@ -91,6 +91,19 @@ const isWestNewClosedToday = (at: Date) =>
 
 type Tile = Venue['short']
 
+/** 지금 이후 가장 먼저 시작하는 직원식당 배식 */
+function nextService(at: Date): { meal: MealKey; opensAt: Date } | null {
+  const nexts = HALLS.flatMap((h) => {
+    const n = getNextService(h, at)
+    return n ? [n] : []
+  })
+  nexts.sort((a, b) => a.opensAt.getTime() - b.opensAt.getTime())
+  return nexts[0] ?? null
+}
+
+const nextServiceLine = (n: { meal: MealKey; opensAt: Date }) =>
+  `다음 배식은 ${MEAL_LABEL[n.meal]} ${clock(n.opensAt)}부터예요`
+
 export function homeHeadline(
   at: Date,
   from?: BuildingId | null,
@@ -115,19 +128,20 @@ export function homeHeadline(
   })
 
   if (open.length === 0) {
-    const nexts = HALLS.flatMap((h) => {
-      const n = getNextService(h, at)
-      return n ? [n] : []
-    })
-    nexts.sort((a, b) => a.opensAt.getTime() - b.opensAt.getTime())
-    const next = nexts[0]
+    const next = nextService(at)
     if (!next) return { title: '오늘은 배식 정보가 없어요', detail: null, tiles: ['동'] }
     const dishes = summary(getCourses(next.opensAt, 'east', next.meal))
     const detail = dishes ? `${MEAL_LABEL[next.meal]} 메뉴: ${dishes}` : null
+    return { title: nextServiceLine(next), detail, tiles: ['동'] }
+  }
+
+  // 근무 건물에서 걸어가면 모두 마감 뒤에 도착한다: 대기만 보고 권하지 않는다
+  if (from) {
+    const next = nextService(at)
     return {
-      title: `다음 배식은 ${MEAL_LABEL[next.meal]} ${clock(next.opensAt)}부터예요`,
-      detail,
-      tiles: ['동'],
+      title: '지금 출발하면 마감 전에 도착하기 어려워요',
+      detail: next ? nextServiceLine(next) : null,
+      tiles: [VENUES[open[0].hall].short],
     }
   }
 
