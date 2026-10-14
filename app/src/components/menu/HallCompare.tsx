@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { MENU_GROUPS, SERVICE_WINDOWS, VENUES } from "@/data/restaurants"
 import type { Course, DiningHallId, MealKey } from "@/domain/types"
 import { dayKind } from "@/lib/hours"
-import { getCourses } from "@/lib/menu"
+import { getCourses, ORIGIN_NOTE } from "@/lib/menu"
 import { isSoldOut, subscribeOverrides } from "@/lib/override"
 import { mockRating } from "@/lib/prefs"
 import { cn } from "@/lib/utils"
@@ -116,9 +116,7 @@ function HallColumn({
   const halls = MENU_GROUPS[group].venues as DiningHallId[]
   const [first] = halls
   const title =
-    halls.length > 1
-      ? `${MENU_GROUPS[group].label} 공통`
-      : VENUES[first].label
+    halls.length > 1 ? `${MENU_GROUPS[group].label} 공통` : VENUES[first].label
   const hours = hoursOn(first, meal, date)
   const all = getCourses(date, first, meal)
   // 운영하지 않는 날에도 서관 라이브코너는 따로 차려진다
@@ -211,27 +209,34 @@ export function HallCompare({ meal, date }: { meal: MealKey; date: Date }) {
   }
 
   return (
-    <div
-      className={cn(
-        "grid gap-x-4 gap-y-6",
-        compare
-          ? "grid-cols-2 md:grid-cols-[repeat(2,minmax(0,24rem))] md:gap-x-12"
-          : "grid-cols-1 md:max-w-sm"
-      )}
-    >
-      <HallColumn
-        group="east"
-        meal={meal}
-        date={date}
-        headingRef={eastHeading}
-      />
-      {compare && (
+    <div>
+      <div
+        className={cn(
+          "grid gap-x-4 gap-y-6",
+          compare
+            ? "grid-cols-2 md:grid-cols-[repeat(2,minmax(0,24rem))] md:gap-x-12"
+            : "grid-cols-1 md:max-w-sm"
+        )}
+      >
         <HallColumn
-          group="westNew"
+          group="east"
           meal={meal}
           date={date}
-          onShowEast={showEast}
+          headingRef={eastHeading}
         />
+        {compare && (
+          <HallColumn
+            group="westNew"
+            meal={meal}
+            date={date}
+            onShowEast={showEast}
+          />
+        )}
+      </div>
+      {compare && (
+        <p className="mt-6 text-xs leading-snug text-muted-foreground">
+          {ORIGIN_NOTE}
+        </p>
       )}
     </div>
   )

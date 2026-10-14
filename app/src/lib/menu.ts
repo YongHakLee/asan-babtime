@@ -1,9 +1,13 @@
-import { WEEK_MENU } from '@/data/menus/week-2026-10-12'
+import { ORIGIN, WEEK_MENU } from '@/data/menus/week-2026-10-12'
 import { VENUES } from '@/data/restaurants'
 import type { Course, DayMenu, MealKey, VenueId } from '@/domain/types'
 import { seoulYmd } from '@/lib/hours'
 
 export const MENU_WEEK_LABEL = '10월 3주차 메뉴 기준'
+
+export const ORIGIN_NOTE = `원산지(10월 3주차 안내 기준): ${Object.entries(ORIGIN)
+  .map(([item, place]) => `${item} ${place}`)
+  .join(', ')}`
 
 /** 서울 기준 요일 → 저장 주의 같은 요일 (월=0 … 일=6). */
 export function getMenuForDate(at: Date): DayMenu {
