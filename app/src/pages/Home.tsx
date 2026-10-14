@@ -1,7 +1,280 @@
-export default function HomePage() {
+import type { ReactNode } from "react"
+
+import {
+  BuildingTile,
+  type BuildingGlyph,
+} from "@/components/common/BuildingTile"
+import { ForecastBars } from "@/components/common/ForecastBars"
+import { ServiceStrip } from "@/components/common/ServiceStrip"
+import { StatusLines, StatusText } from "@/components/common/StatusText"
+import { Separator } from "@/components/ui/separator"
+import { VENUES } from "@/data/restaurants"
+import type {
+  DiningHallId,
+  MealKey,
+  ServiceStatus,
+  VenueId,
+} from "@/domain/types"
+import { useClock } from "@/hooks/useClock"
+import { useVenueStatus } from "@/hooks/useVenueStatus"
+import {
+  formatMinutes,
+  seoulMinutes,
+  seoulWeekdayIndex,
+  seoulWeekdayTime,
+} from "@/lib/format"
+import {
+  getActiveMeal,
+  getNextService,
+  getServiceStatus,
+  seoulYmd,
+} from "@/lib/hours"
+import { getCourses, MENU_WEEK_LABEL, summary } from "@/lib/menu"
+import { forecast, homeHeadline, MEAL_LABEL } from "@/lib/recommend"
+
+const HALLS: DiningHallId[] = ["east", "westNew"]
+const MEALS: MealKey[] = ["breakfast", "lunch", "dinner", "mobile", "lateNight"]
+const DAY_MS = 86_400_000
+
+const hm = (d: Date) => formatMinutes(seoulMinutes(d))
+
+/** 다음 배식이 오늘이 아닐 때 "내일 11:00부터" · "월요일 11:00부터" */
+function laterStart(opensAt: Date, now: Date): string {
+  const days = Math.round(
+    (Date.parse(seoulYmd(opensAt)) - Date.parse(seoulYmd(now))) / DAY_MS
+  )
+  const day = days === 1 ? "내일" : seoulWeekdayTime(opensAt).split(" ")[0]
+  return `${day} ${hm(opensAt)}부터`
+}
+
+/** 오늘 배식이 하나도 없는 날의 이유 */
+function dayOffLabel(now: Date): string {
+  // 일요일과 공휴일은 같은 dayKind라 요일로 가른다 (5=토, 6=일)
+  return seoulWeekdayIndex(now) >= 5 ? "주말 휴무" : "공휴일 휴무"
+}
+
+/** 배식 중이 아닌 식당의 상태 글과 함께 보여 줄 다음 끼니 */
+function idleState(venue: VenueId, now: Date) {
+  const next = getNextService(venue, now)
+  const servesToday = MEALS.some(
+    (m) => getServiceStatus(venue, m, now).kind !== "notToday"
+  )
+  const sameDay = next && seoulYmd(next.opensAt) === seoulYmd(now)
+  const menu = next ? summary(getCourses(next.opensAt, venue, next.meal)) : ""
+
+  if (next && sameDay) {
+    return {
+      primary: `${hm(next.opensAt)} 시작`,
+      secondary: MEAL_LABEL[next.meal],
+      tone: "text-foreground",
+      menu,
+    }
+  }
+  return {
+    primary: servesToday ? "오늘 운영 종료" : dayOffLabel(now),
+    secondary: next ? laterStart(next.opensAt, now) : undefined,
+    tone: "text-muted-foreground",
+    menu,
+  }
+}
+
+function Row({
+  name,
+  glyph,
+  tone,
+  menu,
+  status,
+  extra,
+}: {
+  name: string
+  glyph: BuildingGlyph
+  tone?: "solid" | "soft"
+  menu: string
+  status: ReactNode
+  extra?: ReactNode
+}) {
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6">
-      <h1 className="text-xl font-semibold">지금</h1>
+    <div className="grid grid-cols-[2.125rem_minmax(0,1fr)_auto] items-start gap-x-3 py-3.5">
+      <BuildingTile glyph={glyph} tone={tone} />
+      <div className="min-w-0 pt-px">
+        <h2 className="text-[0.9375rem] leading-snug font-semibold tracking-tight">
+          {name}
+        </h2>
+        {menu && (
+          <p className="mt-0.5 text-[0.8125rem] leading-snug text-muted-foreground">
+            {menu}
+          </p>
+        )}
+        {extra}
+      </div>
+      <div className="pt-0.5">{status}</div>
+    </div>
+  )
+}
+
+function HallRow({ hall }: { hall: DiningHallId }) {
+  const { now } = useClock()
+  const { meal, status, level, waitMinutes } = useVenueStatus(hall)
+  const venue = VENUES[hall]
+
+  if (meal && status?.kind === "open") {
+    const busy = level === "queue" || level === "busy"
+    return (
+      <Row
+        name={venue.name}
+        glyph={venue.short}
+        menu={summary(getCourses(now, hall, meal))}
+        status={<StatusText level={level} waitMinutes={waitMinutes} />}
+        extra={busy && <ForecastBars points={forecast(hall, meal, now)} />}
+      />
+    )
+  }
+
+  const idle = idleState(hall, now)
+  return (
+    <Row
+      name={venue.name}
+      glyph={venue.short}
+      menu={idle.menu}
+      status={
+        <StatusLines
+          className={idle.tone}
+          primary={idle.primary}
+          secondary={idle.secondary}
+        />
+      }
+    />
+  )
+}
+
+function BoxLunchRow() {
+  const { now } = useClock()
+  const venue = VENUES.boxLunch
+  const s = getServiceStatus("boxLunch", "lunch", now)
+
+  if (s.kind === "open" || s.kind === "before") {
+    return (
+      <Row
+        name={venue.name}
+        glyph={venue.short}
+        tone="soft"
+        menu={summary(getCourses(now, "boxLunch", "lunch"))}
+        status={
+          <StatusLines
+            primary={
+              s.kind === "open"
+                ? `${hm(s.closesAt)}까지`
+                : `${hm(s.opensAt)}부터`
+            }
+            secondary="수령"
+          />
+        }
+      />
+    )
+  }
+
+  const next = getNextService("boxLunch", now)
+  return (
+    <Row
+      name={venue.name}
+      glyph={venue.short}
+      tone="soft"
+      menu={
+        next ? summary(getCourses(next.opensAt, "boxLunch", next.meal)) : ""
+      }
+      status={
+        <StatusLines
+          className="text-muted-foreground"
+          primary={s.kind === "ended" ? "오늘 마감" : dayOffLabel(now)}
+          secondary={next ? laterStart(next.opensAt, now) : undefined}
+        />
+      }
+    />
+  )
+}
+
+/** 시트 맨 위 배식 막대: 열린 직원식당(동관 우선)의 끼니, 없으면 가장 이른 다음 배식 */
+function stripFor(now: Date): { meal: MealKey; status: ServiceStatus } | null {
+  for (const hall of HALLS) {
+    const meal = getActiveMeal(hall, now)
+    if (meal) return { meal, status: getServiceStatus(hall, meal, now) }
+  }
+  const next = HALLS.flatMap((h) => getNextService(h, now) ?? []).sort(
+    (a, b) => a.opensAt.getTime() - b.opensAt.getTime()
+  )[0]
+  if (!next) return null
+  return {
+    meal: next.meal,
+    status: {
+      kind: "before",
+      opensAt: next.opensAt,
+      minutesUntil: Math.ceil(
+        (next.opensAt.getTime() - now.getTime()) / 60_000
+      ),
+    },
+  }
+}
+
+export default function HomePage() {
+  const { now } = useClock()
+  const { title, detail, tiles } = homeHeadline(now)
+  const strip = stripFor(now)
+
+  return (
+    <main className="@container flex flex-1 flex-col lg:flex-row lg:bg-deep">
+      <section
+        aria-labelledby="home-title"
+        className="bg-deep px-4 pt-4 pb-[2.125rem] text-deep-foreground lg:w-[42%] lg:shrink-0 lg:pt-12 lg:pr-12 lg:pl-[max(1rem,calc((100cqw_-_64rem)/2_+_1rem))]"
+      >
+        <div className="lg:sticky lg:top-12">
+          <div className="flex gap-1.5">
+            {tiles.map((g) => (
+              <BuildingTile
+                key={g}
+                glyph={g}
+                tone="inverse"
+                className="size-[1.875rem] rounded-[7px] text-[0.9375rem] lg:size-10 lg:text-lg"
+              />
+            ))}
+          </div>
+          <h1
+            id="home-title"
+            className="mt-5 text-[1.5625rem] leading-[1.28] font-bold tracking-[-0.035em] text-balance lg:mt-7 lg:text-[2.375rem] lg:leading-[1.2]"
+          >
+            {title}
+          </h1>
+          {detail && (
+            <p className="mt-2 text-[0.8125rem] leading-normal text-pretty text-deep-foreground/70 lg:mt-4 lg:text-[0.9375rem]">
+              {detail}
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section
+        aria-label="식당별 상황"
+        className="relative -mt-[18px] flex flex-1 flex-col rounded-t-3xl bg-card px-4 pt-4 pb-6 lg:mt-0 lg:rounded-tr-none lg:pt-10 lg:pr-[max(1rem,calc((100cqw_-_64rem)/2_+_1rem))] lg:pl-12"
+      >
+        {strip && <ServiceStrip meal={strip.meal} status={strip.status} />}
+        <ul className="mt-1.5 flex flex-col">
+          <li aria-label={VENUES.east.name}>
+            <HallRow hall="east" />
+          </li>
+          <li aria-label={VENUES.westNew.name}>
+            <Separator />
+            <HallRow hall="westNew" />
+          </li>
+          <li aria-label={VENUES.boxLunch.name}>
+            <Separator />
+            <BoxLunchRow />
+          </li>
+        </ul>
+        <p className="mt-auto flex flex-wrap gap-x-2 pt-6 text-[0.6875rem] text-muted-foreground">
+          <span>모의 데이터 기반 예측 시연</span>
+          <span aria-hidden>·</span>
+          <span>{MENU_WEEK_LABEL}</span>
+        </p>
+      </section>
     </main>
   )
 }

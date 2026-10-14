@@ -10,10 +10,36 @@ test("tabs navigate", async ({ page }) => {
   ]) {
     await page.getByRole("link", { name: label, exact: true }).click()
     await expect(page).toHaveURL(path)
+    // 지금(홈)의 h1은 결론 문장이라 탭 이름과 다르다
     await expect(
-      page.getByRole("heading", { level: 1, name: label })
+      page.getByRole("heading", {
+        level: 1,
+        name: path === "/" ? /지금은|다음 배식은|오늘은/ : label,
+      })
     ).toBeVisible()
   }
+})
+
+test("home lists every venue at demo Wed 12:20", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("button", { name: "시연 시간" }).click()
+  const sheet = page.getByRole("dialog", { name: "시연 시간" })
+  await sheet.getByRole("button", { name: "수요일" }).click()
+  await sheet.getByRole("slider").focus()
+  await page.keyboard.press("Home")
+  for (let i = 0; i < 88; i++) await page.keyboard.press("ArrowRight")
+  await sheet.getByRole("button", { name: "이 시각으로 보기" }).click()
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "지금은 서관·신관이 바로 드실 수 있어요"
+  )
+  for (const name of ["동관 직원식당", "서관·신관 직원식당", "간편식 도시락"]) {
+    await expect(page.getByRole("listitem", { name })).toBeVisible()
+  }
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth
+    )
+  ).toBe(true)
 })
 
 test("dark mode toggles html class", async ({ page }) => {

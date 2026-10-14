@@ -9,7 +9,7 @@ import { effectiveWait } from '@/lib/status'
 const MIN = 60_000
 const OVERRIDE_TTL_MS = 15 * MIN // override.ts의 TTL과 같다
 const HALLS: DiningHallId[] = ['east', 'westNew']
-const MEAL_LABEL: Record<MealKey, string> = {
+export const MEAL_LABEL: Record<MealKey, string> = {
   breakfast: '조식',
   lunch: '중식',
   dinner: '석식',

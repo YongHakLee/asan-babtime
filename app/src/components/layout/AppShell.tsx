@@ -9,7 +9,7 @@ export function AppShell() {
   return (
     <div className="flex min-h-svh flex-col bg-background">
       <Header />
-      <div className="flex-1 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+      <div className="flex flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
         <Outlet />
       </div>
       <TabBar />
