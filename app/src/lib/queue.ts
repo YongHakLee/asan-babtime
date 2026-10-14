@@ -1,5 +1,5 @@
 import type { DiningHallId, MealKey } from '@/domain/types'
-import { getServiceStatus, seoulYmd } from '@/lib/hours'
+import { getServiceStatus, seoulYmd, windowOn } from '@/lib/hours'
 
 export type CongestionLevel = 'ok' | 'mid' | 'queue' | 'busy'
 
@@ -66,18 +66,51 @@ export function simulateQueue(
   const status = getServiceStatus(hall, meal, at)
   if (status.kind !== 'open') return none
 
+  const arrivals = arrivalsFn(hall, model, status.opensAt, popularity)
   const start = status.opensAt.getTime()
-  const ymd = seoulYmd(status.opensAt) // 자정을 넘겨도 시작 날짜 기준
-  const peak = new Date(`${ymd}T${model.peak}:00+09:00`).getTime()
-
   let q = 0
   for (let ms = start; ms < at.getTime(); ms += MIN) {
-    const dm = (ms - peak) / MIN
-    const noise = mulberry32(fnv1a(`${hall}|${ymd}|${Math.round((ms - start) / MIN)}`))
-    const arrivals =
-      model.base * popularity * Math.exp(-(dm * dm) / (2 * model.sigma * model.sigma)) * (0.9 + 0.2 * noise)
-    q = Math.max(0, q + arrivals - model.service)
+    q = Math.max(0, q + arrivals(ms) - model.service)
   }
   const waitMinutes = Math.round((q / model.service) * 10) / 10
   return { waitingPeople: Math.round(q), waitMinutes, level: levelForWait(waitMinutes) }
+}
+
+/**
+ * 배식 창 안의 1분당 도착 인원(모의). 피크 중심 정규분포 × 인기도 × 시드 고정 잡음.
+ * 시드는 식당·배식 시작 날짜·시작 후 경과 분이라 같은 날 같은 분은 늘 같은 값이다.
+ */
+function arrivalsFn(hall: DiningHallId, model: Model, opensAt: Date, popularity: number): (ms: number) => number {
+  const start = opensAt.getTime()
+  const ymd = seoulYmd(opensAt) // 자정을 넘겨도 시작 날짜 기준
+  const peak = new Date(`${ymd}T${model.peak}:00+09:00`).getTime()
+  return (ms) => {
+    const dm = (ms - peak) / MIN
+    const noise = mulberry32(fnv1a(`${hall}|${ymd}|${Math.round((ms - start) / MIN)}`))
+    return model.base * popularity * Math.exp(-(dm * dm) / (2 * model.sigma * model.sigma)) * (0.9 + 0.2 * noise)
+  }
+}
+
+/**
+ * 그 날(서울) 시작하는 배식 창 전체를 stepMin 간격으로 나눈 구간별 도착 인원 합(반올림).
+ * simulateQueue와 같은 공식·같은 시드라 대기 예측과 맞물린다. 그 날 운영하지 않으면 [].
+ */
+export function arrivalsSeries(
+  hall: DiningHallId,
+  meal: MealKey,
+  day: Date,
+  popularity: number,
+  stepMin = 10,
+): { time: Date; arrivals: number }[] {
+  const model = MODEL[`${hall}.${meal}`]
+  const w = windowOn(hall, meal, seoulYmd(day))
+  if (!model || !w) return []
+  const arrivals = arrivalsFn(hall, model, w.start, popularity)
+  const out: { time: Date; arrivals: number }[] = []
+  for (let from = w.start.getTime(); from < w.end.getTime(); from += stepMin * MIN) {
+    let sum = 0
+    for (let ms = from; ms < Math.min(from + stepMin * MIN, w.end.getTime()); ms += MIN) sum += arrivals(ms)
+    out.push({ time: new Date(from), arrivals: Math.round(sum) })
+  }
+  return out
 }

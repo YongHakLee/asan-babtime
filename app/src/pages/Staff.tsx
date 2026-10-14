@@ -206,6 +206,7 @@ function SoldOutSection({ hall }: { hall: DiningHallId }) {
                           meal: target.meal,
                           course: c.label,
                           date: seoulYmd(target.day),
+                          at: now.getTime(),
                         },
                         on
                       )

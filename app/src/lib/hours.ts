@@ -77,6 +77,12 @@ export function getServiceStatus(venue: VenueId, meal: MealKey, now: Date): Serv
   return { kind: 'ended' }
 }
 
+/** 그 날(서울 YYYY-MM-DD) 시작하는 끼니의 배식 창. 그 날 운영하지 않으면 null. */
+export function windowOn(venue: VenueId, meal: MealKey, ymd: string): { start: Date; end: Date } | null {
+  const w = windowsFor(venue, ymd, meal)[0]
+  return w ? span(w, ymd) : null
+}
+
 export function getActiveMeal(venue: VenueId, now: Date): MealKey | null {
   const today = seoulYmd(now)
   for (const ymd of [addDays(today, -1), today]) {

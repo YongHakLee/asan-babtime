@@ -20,6 +20,8 @@ export interface SoldOut {
   course?: string
   /** Seoul YYYY-MM-DD */
   date: string
+  /** 입력한 순간의 화면 시각(시연 시각일 수 있음), epoch ms. 운영자 화면 품절 기록 표기에만 쓴다. */
+  at?: number
 }
 
 const OVERRIDE_KEY = 'overrides'
@@ -90,6 +92,11 @@ export function setSoldOut(s: SoldOut, on: boolean): void {
   const rest = readSoldOut().filter((x) => !sameSoldOut(x, s))
   storage.set(SOLDOUT_KEY, on ? [...rest, s] : rest)
   broadcast()
+}
+
+/** 그 날(서울 YYYY-MM-DD) 품절 입력. 입력한 순서대로. */
+export function soldOutOn(date: string): SoldOut[] {
+  return readSoldOut().filter((x) => x.date === date)
 }
 
 export function isSoldOut(hall: DiningHallId, meal: MealKey, course: string | undefined, at: Date): boolean {

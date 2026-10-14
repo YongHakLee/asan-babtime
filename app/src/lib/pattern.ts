@@ -1,6 +1,6 @@
 import type { DiningHallId, MealKey } from '@/domain/types'
 import { formatMinutes, seoulMinutes } from '@/lib/format'
-import { getServiceStatus, seoulYmd } from '@/lib/hours'
+import { windowOn } from '@/lib/hours'
 import { dayPopularity } from '@/lib/menu'
 import { simulateQueue, type CongestionLevel } from '@/lib/queue'
 
@@ -26,17 +26,6 @@ const WEEK: { date: string; dayLabel: DayLabel }[] = (
 ).map((dayLabel, i) => ({ date: `2026-10-${String(12 + i).padStart(2, '0')}`, dayLabel }))
 
 const MIN = 60_000
-
-/** 그 날(서울) 시작하는 끼니의 배식 창. 그 날 운영하지 않으면 null. */
-function windowOn(hall: DiningHallId, meal: MealKey, ymd: string): { start: Date; end: Date } | null {
-  let s = getServiceStatus(hall, meal, new Date(`${ymd}T00:00:00+09:00`))
-  // 전날 시작해 자정을 넘긴 창이면 그 창이 끝난 뒤부터 다시 본다
-  if (s.kind === 'open' && seoulYmd(s.opensAt) !== ymd) s = getServiceStatus(hall, meal, s.closesAt)
-  if (s.kind === 'open') return { start: s.opensAt, end: s.closesAt }
-  if (s.kind !== 'before') return null
-  const o = getServiceStatus(hall, meal, s.opensAt)
-  return o.kind === 'open' ? { start: o.opensAt, end: o.closesAt } : null
-}
 
 /**
  * 평소 혼잡 패턴: 저장 주간(2026-10-12~18) 중 그 식당·끼니가 운영되는 요일마다

@@ -94,3 +94,11 @@ export function mockRating(itemName: string): { avg: number; count: number } {
   const count = 40 + (Math.floor(h / 101) % 201)
   return { avg: Math.round(avg * 10) / 10, count }
 }
+
+/** 이름 해시 기반의 결정적 모의 잔반 비율 (남기지 않음 55–70%, 많이 남김 5–12%, 나머지 조금 남김). */
+export function mockLeftover(itemName: string): Record<Rating['leftover'], number> {
+  const h = fnv1a(`${itemName}|leftover`)
+  const none = 0.55 + ((h % 151) / 150) * 0.15
+  const much = 0.05 + ((Math.floor(h / 151) % 71) / 70) * 0.07
+  return { none, some: 1 - none - much, much }
+}
