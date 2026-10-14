@@ -2,10 +2,12 @@ import { VENUES } from '@/data/restaurants'
 import type { DiningHallId, MealKey } from '@/domain/types'
 import { getActiveMeal, getNextService, getServiceStatus } from '@/lib/hours'
 import { dayPopularity, getCourses, summary } from '@/lib/menu'
+import { getActiveOverride } from '@/lib/override'
 import { simulateQueue } from '@/lib/queue'
 import { effectiveWait } from '@/lib/status'
 
 const MIN = 60_000
+const OVERRIDE_TTL_MS = 15 * MIN // override.ts의 TTL과 같다
 const HALLS: DiningHallId[] = ['east', 'westNew']
 const MEAL_LABEL: Record<MealKey, string> = {
   breakfast: '조식',
@@ -29,6 +31,7 @@ function windowOf(hall: DiningHallId, meal: MealKey, at: Date): { start: Date; e
 const waitAt = (hall: DiningHallId, meal: MealKey, day: Date, at: Date) =>
   simulateQueue(hall, meal, at, dayPopularity(day, hall, meal)).waitMinutes
 
+/** 모델 예측만 반영한다(직원 입력 제외). 화면에서는 시뮬레이션으로 표기한다. */
 export function forecast(
   hall: DiningHallId,
   meal: MealKey,
@@ -50,7 +53,11 @@ export function forecast(
 export function recommendTime(hall: DiningHallId, meal: MealKey, at: Date): Date | null {
   const w = windowOf(hall, meal, at)
   if (!w) return null
-  for (let ms = Math.max(at.getTime(), w.start.getTime()); ms < w.end.getTime(); ms += 5 * MIN) {
+  const o = getActiveOverride(hall, at)
+  if (o?.kind === 'clear') return at
+  // 직원이 '줄 있음'으로 표시했으면 그 표시가 만료되기 전에는 한산하다고 하지 않는다
+  const earliest = o?.kind === 'queue' ? o.at + OVERRIDE_TTL_MS : 0
+  for (let ms = Math.max(at.getTime(), w.start.getTime(), earliest); ms < w.end.getTime(); ms += 5 * MIN) {
     if (waitAt(hall, meal, w.start, new Date(ms)) < 3) return new Date(ms)
   }
   return null
@@ -68,7 +75,7 @@ function hmParts(d: Date): { h: number; m: number } {
   return { h: Number(p.hour), m: Number(p.minute) }
 }
 
-function koreanTime(d: Date): string {
+export function koreanTime(d: Date): string {
   const { h, m } = hmParts(d)
   return m === 0 ? `${h}시` : `${h}시 ${m}분`
 }
@@ -77,6 +84,9 @@ function clock(d: Date): string {
   const { h, m } = hmParts(d)
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
+
+/** 서관·신관은 주말·공휴일에 쉰다(평일에만 중식 운영). */
+const isWestNewClosedToday = (at: Date) => getServiceStatus('westNew', 'lunch', at).kind === 'notToday'
 
 type Tile = '동' | '서' | '신'
 const TILES: Record<DiningHallId, Tile[]> = { east: ['동'], westNew: ['서', '신'] }
@@ -114,9 +124,9 @@ export function homeHeadline(at: Date): { title: string; detail: string | null; 
   let detail: string | null = null
   const other = open.find((o) => o.hall !== best.hall && o.wait >= 3)
   const rec = other ? recommendTime(other.hall, other.meal, at) : null
-  if (other && rec) {
+  if (other && rec && rec.getTime() > at.getTime()) {
     detail = `${VENUES[other.hall].label}은 ${koreanTime(rec)}부터 한산해질 것으로 보여요`
-  } else if (open.length === 1 && best.hall === 'east' && getServiceStatus('westNew', 'lunch', at).kind === 'notToday') {
+  } else if (open.length === 1 && best.hall === 'east' && isWestNewClosedToday(at)) {
     detail = '주말과 공휴일에는 동관만 운영해요'
   }
   return { title, detail, tiles: TILES[best.hall] }
