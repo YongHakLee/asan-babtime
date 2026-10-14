@@ -6,3 +6,5 @@ dist/
 .DS_Store
 .claude/worktrees/
 proposal/build/out/
+.vercel
+.env*
