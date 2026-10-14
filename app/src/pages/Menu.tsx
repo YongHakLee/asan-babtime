@@ -196,13 +196,13 @@ export default function MenuPage() {
             <TabsList
               variant="line"
               aria-label="메뉴 종류"
-              className="h-11 w-full justify-start gap-6 p-0"
+              className="w-full justify-start gap-4 p-0 group-data-horizontal/tabs:h-11"
             >
               {TABS.map((t) => (
                 <TabsTrigger
                   key={t.value}
                   value={t.value}
-                  className="h-full flex-none px-0 text-[0.9375rem] text-deep-muted after:bg-deep-foreground hover:text-deep-foreground focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-deep-foreground focus-visible:outline-none data-active:font-semibold data-active:text-deep-foreground"
+                  className="h-full min-w-11 flex-none px-0 text-[0.9375rem] text-deep-muted after:bg-deep-foreground hover:text-deep-foreground focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-deep-foreground focus-visible:outline-none data-active:font-semibold data-active:text-deep-foreground"
                 >
                   {t.label}
                 </TabsTrigger>

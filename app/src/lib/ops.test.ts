@@ -89,6 +89,19 @@ describe('satisfaction', () => {
     expect(satisfaction(t('2026-10-14T12:20'))).toEqual(before)
   })
 
+  it('skips stored ratings that are null or not objects', () => {
+    const before = satisfaction(t('2026-10-14T12:20'))
+    localStorage.setItem(
+      'babttae.ratings',
+      JSON.stringify({ '2026-10-14:east:lunch': null, '2026-10-14:east:breakfast': 5, '2026-10-14:west:lunch': 'good' }),
+    )
+    expect(satisfaction(t('2026-10-14T12:20'))).toEqual(before)
+    for (const raw of ['null', '[1,2]', '7', '"x"']) {
+      localStorage.setItem('babttae.ratings', raw)
+      expect(satisfaction(t('2026-10-14T12:20'))).toEqual(before)
+    }
+  })
+
   it('is deterministic with shares adding up to 100', () => {
     const s = satisfaction(t('2026-10-14T12:20'))
     expect(s).toEqual(satisfaction(t('2026-10-14T12:20')))

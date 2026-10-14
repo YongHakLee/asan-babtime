@@ -69,13 +69,24 @@ export function setWorkBuilding(b: BuildingId | null): void {
   emit()
 }
 
+const isObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
+
+/** 저장된 별점 묶음. 형식이 깨졌으면(null·배열·숫자 등) 빈 묶음으로 본다. */
+function ratings(): Record<string, unknown> {
+  const all = storage.get<unknown>('ratings', {})
+  return isObject(all) ? all : {}
+}
+
 export function rateMeal(key: string, r: Rating): void {
-  storage.set('ratings', { ...storage.get<Record<string, Rating>>('ratings', {}), [key]: r })
+  storage.set('ratings', { ...ratings(), [key]: r })
   emit()
 }
 
+/** 저장된 별점. 항목이 객체가 아니면(null·문자열 등) 없는 것으로 본다. 필드 검증은 쓰는 쪽이 한다. */
 export function getRating(key: string): Rating | null {
-  return storage.get<Record<string, Rating>>('ratings', {})[key] ?? null
+  const r = ratings()[key]
+  return isObject(r) ? (r as unknown as Rating) : null
 }
 
 function fnv1a(s: string): number {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { t } from '@/test/time'
 import { BOX_LUNCH_NOTICE, BOX_LUNCH_RESERVATION } from '@/data/menus/box-lunch-reservation'
-import { MENU_WEEK_LABEL, dayPopularity, getCourses, getMenuForDate, summary } from './menu'
+import { MENU_WEEK_LABEL, ORIGIN_NOTE, dayPopularity, getCourses, getMenuForDate, summary } from './menu'
 
 describe('menu', () => {
   it('maps any Wednesday to the stored Wednesday', () => {
@@ -22,6 +22,10 @@ describe('menu', () => {
     expect(getMenuForDate(t('2026-10-12T09:00')).date).toBe('2026-10-12')
     expect(getMenuForDate(t('2026-10-18T09:00')).date).toBe('2026-10-18')
   })
+  it('origin note reads as the transcribed notice', () =>
+    expect(ORIGIN_NOTE).toBe(
+      '원산지(10월 3주차 안내 기준): 소고기 호주산, 돼지고기 국내산·외국산, 닭고기 국내산, 쌀 국내산, 김치(배추·고춧가루) 국내산',
+    ))
   it('uses Seoul weekday near midnight', () => {
     // 2026-11-03T23:30Z is Wed 08:30 in Seoul
     expect(getMenuForDate(new Date('2026-11-03T23:30:00Z')).date).toBe('2026-10-14')

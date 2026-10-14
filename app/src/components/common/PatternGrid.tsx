@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type RefObject } from "react"
 
 import { waitText } from "@/components/common/StatusText"
 import { formatMinutes } from "@/lib/format"
@@ -51,6 +51,39 @@ function useOverflowX<T extends HTMLElement>() {
   return [ref, overflow] as const
 }
 
+/**
+ * 가로로 밀 때 표 가장자리(오른쪽 끝, 왼쪽 고정 요일 열 밑)에 걸려 잘린 정시 눈금은
+ * 숨기고, 다 보일 때만 보인다. 반쯤 잘린 "14"처럼 읽히지 않게 한다.
+ */
+function useHideClippedLabels(
+  scroller: RefObject<HTMLElement | null>,
+  active: boolean,
+  /** 표 내용이 바뀌면 눈금을 다시 찾는다 */
+  rows: unknown
+) {
+  useEffect(() => {
+    const root = scroller.current
+    if (!root || typeof IntersectionObserver === "undefined") return
+    const labels = [...root.querySelectorAll<HTMLElement>("[data-hour-label]")]
+    if (!active) {
+      labels.forEach((el) => (el.style.visibility = ""))
+      return
+    }
+    const rowHead = parseFloat(getComputedStyle(root).fontSize) * ROW_HEAD_REM
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          ;(e.target as HTMLElement).style.visibility =
+            e.intersectionRatio > 0.99 ? "" : "hidden"
+        }
+      },
+      { root, rootMargin: `0px 0px 0px -${rowHead}px`, threshold: [0, 0.99, 1] }
+    )
+    labels.forEach((el) => io.observe(el))
+    return () => io.disconnect()
+  }, [scroller, active, rows])
+}
+
 function Swatch({ level }: { level: CongestionLevel }) {
   return (
     <span
@@ -82,6 +115,7 @@ export function PatternGrid({
   today?: string
 }) {
   const [scroller, overflow] = useOverflowX<HTMLDivElement>()
+  useHideClippedLabels(scroller, overflow, rows)
   if (rows.length === 0) return null
   // 요일마다 배식 창 길이가 달라도(동관 일요일은 14:00까지) 같은 열에 맞춘다
   const times = [...new Set(rows.flatMap((r) => r.slots.map((s) => s.time)))].sort()
@@ -113,7 +147,9 @@ export function PatternGrid({
           </colgroup>
           <thead>
             <tr>
-              <td className="sticky left-0 bg-popover" />
+              <th scope="col" className="sticky left-0 bg-popover p-0">
+                <span className="sr-only">요일</span>
+              </th>
               {times.map((t) => {
                 const onHour = t.endsWith(":00")
                 return (
@@ -125,6 +161,7 @@ export function PatternGrid({
                     {onHour && (
                       <span
                         aria-hidden
+                        data-hour-label
                         className="absolute bottom-0.5 left-0 text-[0.6875rem] leading-none whitespace-nowrap text-muted-foreground tabular-nums"
                       >
                         {`${Number(t.slice(0, 2))}시`}

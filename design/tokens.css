@@ -1,6 +1,7 @@
 /*
  * 밥타임 디자인 토큰 (웹앱·제안서 공통, 색의 단일 원천)
- * 근거: docs/superpowers/specs/2026-10-14-asan-cafeteria-design.md 3.6
+ * 근거(라이트 :root): docs/superpowers/specs/2026-10-14-asan-cafeteria-design.md 3.6
+ * 근거(다크 .dark, 그래파이트): docs/superpowers/specs/2026-10-14-babtime-v2-design.md 2.4
  * 서체 로드(@font-face)는 이 파일에 두지 않는다. 앱과 제안서가 각자 로드한다.
  */
 

@@ -92,7 +92,7 @@ function Today() {
               />
             </div>
             <p className="mt-2 text-xs text-muted-foreground tabular-nums">
-              {`하루 ${BOX_LUNCH_DAILY}개 한정 · ${PICKUP.start}–${PICKUP.end} 수령`}
+              {`하루 ${BOX_LUNCH_DAILY}개 한정이고 ${PICKUP.start}–${PICKUP.end}에 받아요`}
             </p>
           </>
         )}

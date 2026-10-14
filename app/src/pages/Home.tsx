@@ -334,11 +334,10 @@ export default function HomePage() {
           open={sheetOpen}
           onOpenChange={setSheetOpen}
         />
-        <p className="mt-auto flex flex-wrap gap-x-2 pt-6 text-[0.6875rem] text-muted-foreground">
-          <span>모의 데이터 기반 예측 시연</span>
-          <span aria-hidden>·</span>
-          <span>{MENU_WEEK_LABEL}</span>
-        </p>
+        <div className="mt-auto flex flex-col gap-0.5 pt-6 text-[0.6875rem] text-muted-foreground">
+          <p>모의 데이터로 대기를 예측한 시연이에요.</p>
+          <p>{`${MENU_WEEK_LABEL}이에요.`}</p>
+        </div>
       </section>
     </main>
   )

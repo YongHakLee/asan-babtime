@@ -11,6 +11,12 @@ const H = 220
 /** 직원식당이 있는 건물. 사인물처럼 primary 테두리로 구분한다. */
 const HAS_CAFETERIA = new Set<BuildingId>(["east", "west", "new"])
 
+/**
+ * 직원식당이 없는 건물의 테두리: muted-foreground를 72%로 얹는다.
+ * 지도 바탕·블록 면 대비가 라이트 3.15:1과 3.34:1, 다크 4.87:1과 4.52:1로 3:1을 넘는다.
+ */
+const PLAIN_OUTLINE_OPACITY = 0.72
+
 /** 핀을 고르면 함께 강조할 건물 */
 const HOME: Record<VenueId, BuildingId> = {
   east: "east",
@@ -58,7 +64,8 @@ export function CampusMap({
                   height={b.h}
                   rx={6}
                   fill={on ? "var(--accent)" : "var(--card)"}
-                  stroke={main ? "var(--primary)" : "var(--border)"}
+                  stroke={main ? "var(--primary)" : "var(--muted-foreground)"}
+                  strokeOpacity={main ? 1 : PLAIN_OUTLINE_OPACITY}
                   strokeWidth={on ? 2 : main ? 1.25 : 1}
                 />
                 {main ? (

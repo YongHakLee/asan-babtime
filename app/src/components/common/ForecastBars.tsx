@@ -15,6 +15,13 @@ export interface ForecastPoint {
 
 /** 막대 높이의 기준 상한. 대기가 짧은 날에도 막대가 과장되지 않게 한다. */
 const MIN_SCALE_MINUTES = 5
+/**
+ * lg: 이 대기(분)부터 막대 영역(4rem)을 다 쓴다. 그보다 짧은 날은 영역 자체를
+ * 최대 대기에 맞춰 줄여(1분당 높이는 그대로) 빈 띠가 크게 남지 않게 한다.
+ * 다 한산해도 LG_FLOOR_MINUTES 높이(1rem)는 남겨 눈금 자리를 지킨다.
+ */
+const LG_FULL_MINUTES = 10
+const LG_FLOOR_MINUTES = 2.5
 
 const hm = (d: Date) => formatMinutes(seoulMinutes(d))
 
@@ -34,9 +41,11 @@ export function ForecastBars({
   size?: "sm" | "lg"
 }) {
   if (points.length === 0) return null
-  const scale = Math.max(MIN_SCALE_MINUTES, ...points.map((p) => p.waitMinutes))
-  const nowIdx = points.findIndex((p) => p.isNow)
   const lg = size === "lg"
+  const peak = Math.max(...points.map((p) => p.waitMinutes))
+  const scale = Math.max(lg ? LG_FLOOR_MINUTES : MIN_SCALE_MINUTES, peak)
+  const band = lg ? Math.min(1, scale / LG_FULL_MINUTES) : 1
+  const nowIdx = points.findIndex((p) => p.isNow)
 
   return (
     <div
@@ -48,8 +57,9 @@ export function ForecastBars({
         aria-hidden
         className={cn(
           "flex items-end gap-0.5",
-          lg ? "h-16 border-b border-border" : "h-[1.375rem]"
+          lg ? "border-b border-border" : "h-[1.375rem]"
         )}
+        style={lg ? { height: `${4 * band}rem` } : undefined}
       >
         {points.map((p, i) => (
           <Tooltip key={p.time.getTime()}>

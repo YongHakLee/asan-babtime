@@ -109,7 +109,8 @@ describe("Home", () => {
 
   it("labels prediction as simulation", () => {
     renderAt("2026-10-14T12:20", <Home />)
-    expect(screen.getByText("모의 데이터 기반 예측 시연")).toBeInTheDocument()
+    expect(screen.getByText("모의 데이터로 대기를 예측한 시연이에요.")).toBeInTheDocument()
+    expect(screen.getByText("10월 3주차 메뉴 기준이에요.")).toBeInTheDocument()
   })
 
   it("sets a work building from the chip and recommends by walk + wait", async () => {
