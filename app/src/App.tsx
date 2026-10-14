@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router"
+import { BrowserRouter, Navigate, Route, Routes } from "react-router"
 
 import { AppShell } from "@/components/layout/AppShell"
 import { ClockProvider } from "@/providers/clock"
@@ -19,6 +19,7 @@ export function App() {
             <Route path="map" element={<MapPage />} />
             <Route path="alerts" element={<AlertsPage />} />
             <Route path="staff" element={<StaffPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -20,6 +20,39 @@ test("tabs navigate", async ({ page }) => {
   }
 })
 
+test("demo sheet opens the staff screen and keeps ?at=", async ({ page }) => {
+  await page.goto("/?at=2026-10-14T12:20")
+  await page.getByRole("button", { name: "시연 시간" }).click()
+  await page
+    .getByRole("dialog", { name: "시연 시간" })
+    .getByRole("link", { name: "검수 직원 화면 열기" })
+    .click()
+  await expect(page).toHaveURL("/staff?at=2026-10-14T12:20")
+  await expect(
+    page.getByRole("heading", { level: 1, name: "검수 직원 화면" })
+  ).toBeVisible()
+  await expect(page.getByRole("dialog")).toHaveCount(0)
+})
+
+test("unknown routes redirect home", async ({ page }) => {
+  await page.goto("/no-such-page")
+  await expect(page).toHaveURL("/")
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+})
+
+test("no console errors on any route", async ({ page }) => {
+  const errors: string[] = []
+  page.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text())
+  })
+  page.on("pageerror", (e) => errors.push(e.message))
+  for (const path of ["/", "/menu", "/map", "/alerts", "/staff"]) {
+    await page.goto(`${path}?at=2026-10-14T12:20`)
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+  }
+  expect(errors).toEqual([])
+})
+
 test("home lists every venue at demo Wed 12:20", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("button", { name: "시연 시간" }).click()
