@@ -1,0 +1,55 @@
+# 인수인계 — 밥타임 (2026-10-15 기준)
+
+서울아산병원 업무개선 AI 공모전 출품작. 산출물 두 가지: **상세 제안서**(md+pdf)와 **구현 프로그램**(웹앱).
+
+## 현재 상태
+| 항목 | 상태 |
+|---|---|
+| 브랜치 | `master` 하나(작업 브랜치·worktree 모두 정리됨), 원격 저장소 없음 |
+| 웹앱 | `app/` — 배포됨 https://asan-babtime.vercel.app (Vercel 프로젝트 `asan-babtime`) |
+| 제안서 | `proposal/상세제안서.md` → `proposal/상세제안서.pdf` (16쪽: 본문 15 + 부록 A) |
+| 검증 | 단위 231, E2E 46 통과 / 제안서 verify PASS |
+| 서비스 이름 | 「밥타임」(임시 — 최종 미정) |
+
+## 확정된 결정
+- 직원식당 3곳: 동관·서관·신관. 서관·신관은 같은 메뉴·같은 시간(평일 중식 11:00–14:00).
+- 건물 5개: 동관, 서관, 신관, 교육연구관, 아산생명과학연구원.
+- 색: 아산 그린 위주, 오렌지는 '지금' 표시선·현재 막대·제안서 표지 선에만. 다크 모드 = 그래파이트. 토큰은 `design/tokens.css` 한 곳.
+- 제안서는 구현 프로그램(웹앱·프로토타입·시연)을 언급하지 않는다. 각주 형식·금지어는 `proposal/build/verify.mjs`가 검사.
+- 금지 디자인 패턴: 이모지, 그라디언트, 같은 카드 반복, 영문 대문자 라벨, 버튼 뒤 화살표, 가운데점(·)으로 잇는 메타 문구.
+
+## 자주 쓰는 명령
+```bash
+# 웹앱 (app/)
+npm --prefix app run dev                      # 로컬 실행
+npm --prefix app test                         # 단위 테스트
+(cd app && npx playwright test)               # E2E
+(cd app && npx tsc -p tsconfig.app.json --noEmit && npm run lint && npm run build)
+
+# 제안서 (저장소 루트)
+npm run proposal:pdf && npm run proposal:verify
+
+# 배포 (저장소 루트, .vercel/ 연결됨)
+vercel deploy --prod --yes
+```
+시연: `/?at=2026-10-14T12:20`(점심 피크), `/staff`(검수 직원), `/ops`(운영자), 홈의 "근무 건물" 칩.
+
+## 사용자(작성자)가 원내에서 확인할 항목
+1. 8장 기대효과 가정값: 평일 중식 4,000명/일, 대기 경험 30%, 1인 5분 단축, 연 250일.
+2. 7장 성과 지표 목표값(모두 '가정').
+3. 서관·신관 직원식당 실제 위치 → `app/src/data/restaurants.ts`.
+4. 건물 간 도보 시간 → `app/src/data/buildings.ts` (`WALK_MINUTES`).
+5. 식당 운영 방식(직영/위탁), 사원증 태깅 단말 위치, 영양팀 잔반 계량 여부.
+6. 최종 서비스 이름(바꾸면 웹앱 머리글·title·README, 제안서 표지·머리글(`proposal/build/print.css`, `verify.mjs`의 HEADER)·본문, 재배포까지).
+
+## 알려진 경미한 이슈(남겨 둠)
+- 식당 상세 시트는 운영하지 않는 날에도 도보 시간을 보여줌.
+- 배식 시작 30초 이내 도착은 '바로 드실 수 있어요'로 표시(반올림).
+- 제안서 7.2의 "3단계 대시보드" 표현은 표 9(2단계 대시보드=입장·품절)와 함께 읽어야 함.
+- 저장소가 막힌 브라우저에서 다크 모드 첫 화면이 잠깐 밝게 보일 수 있음.
+
+## 참고 문서
+- 설계: `docs/superpowers/specs/2026-10-14-asan-cafeteria-design.md`(v1), `docs/superpowers/specs/2026-10-14-babtime-v2-design.md`(v2)
+- 계획: `docs/superpowers/plans/` (v1 웹앱, v1 제안서, v2)
+- 근거 자료: `docs/research/2026-10-14-research-notes.md`
+- 원본 메뉴표: `reference/` (병원 내부 자료 — 공개 저장소에 올리지 말 것)
