@@ -4,3 +4,4 @@ dist/
 .playwright-mcp/
 .vercel/
 .DS_Store
+.claude/worktrees/
