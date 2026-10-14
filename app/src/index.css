@@ -45,6 +45,10 @@
   --color-status-mid: var(--status-mid);
   --color-status-queue: var(--status-queue);
   --color-status-busy: var(--status-busy);
+  --color-status-ok-tint: var(--status-ok-tint);
+  --color-status-mid-tint: var(--status-mid-tint);
+  --color-status-queue-tint: var(--status-queue-tint);
+  --color-status-busy-tint: var(--status-busy-tint);
   --color-zone-green-bg: var(--zone-green-bg);
   --color-zone-green-fg: var(--zone-green-fg);
   --color-zone-orange-bg: var(--zone-orange-bg);

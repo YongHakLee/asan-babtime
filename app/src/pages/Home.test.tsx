@@ -176,6 +176,84 @@ describe("Home", () => {
     expect(screen.queryByText(/걸어서/)).toBeNull()
   })
 
+  it("opens the east detail sheet from its row with pattern and map link", async () => {
+    const user = userEvent.setup()
+    renderAt("2026-10-14T12:20", <Home />)
+    const east = screen.getByRole("listitem", { name: "동관 직원식당" })
+    await user.click(within(east).getByRole("button", { name: "동관 직원식당" }))
+
+    const sheet = screen.getByRole("dialog", { name: "동관 직원식당" })
+    const table = within(sheet).getByRole("table", {
+      name: "동관 직원식당 평소 혼잡 패턴",
+    })
+    // 동관 중식은 월~일 7줄, 정시 열 머리만 보인다
+    expect(within(table).getAllByRole("rowheader").map((th) => th.textContent)).toEqual([
+      "월",
+      "화",
+      "수(오늘)",
+      "목",
+      "금",
+      "토",
+      "일",
+    ])
+    expect(within(table).getAllByText(/^\d+시$/).map((n) => n.textContent)).toEqual([
+      "11시",
+      "12시",
+      "13시",
+      "14시",
+    ])
+    expect(within(table).getAllByText(/^혼잡, 약 \d+분$/).length).toBeGreaterThan(0)
+    expect(within(table).getAllByText("운영 안 함")).toHaveLength(6)
+    // 오늘 예측 막대(크게)와 메뉴, 지도 링크
+    expect(within(sheet).getByRole("list", { name: /예상 대기/ })).toBeInTheDocument()
+    expect(within(sheet).getByText("꽈리고추간장닭갈비, 순두부찌개, 미니새송이볶음")).toBeInTheDocument()
+    expect(within(sheet).getByRole("link", { name: "지도에서 보기" })).toHaveAttribute(
+      "href",
+      "/map?venue=east"
+    )
+    // 근무 건물을 정하지 않았으면 도보 줄이 없다
+    expect(within(sheet).queryByText(/걸어서/)).toBeNull()
+    expect(within(sheet).getByText(/모의 데이터/)).toBeInTheDocument()
+  })
+
+  it("opens the row sheet from the keyboard and shows walk time when set", async () => {
+    const user = userEvent.setup()
+    localStorage.setItem("babttae.workBuilding", '"west"')
+    renderAt("2026-10-14T12:20", <Home />)
+    const nw = within(screen.getByRole("listitem", { name: "신관 직원식당" }))
+    nw.getByRole("button", { name: "신관 직원식당" }).focus()
+    await user.keyboard("{Enter}")
+    const sheet = screen.getByRole("dialog", { name: "신관 직원식당" })
+    expect(within(sheet).getByText("근무 건물에서 걸어서 4분(추정)")).toBeInTheDocument()
+    const table = within(sheet).getByRole("table", {
+      name: "신관 직원식당 평소 혼잡 패턴",
+    })
+    expect(within(table).getAllByRole("rowheader")).toHaveLength(5)
+    expect(within(sheet).getByRole("link", { name: "지도에서 보기" })).toHaveAttribute(
+      "href",
+      "/map?venue=new"
+    )
+    await user.keyboard("{Escape}")
+    expect(screen.queryByRole("dialog")).toBeNull()
+  })
+
+  it("detail sheet on a closed day says so instead of empty bars", async () => {
+    const user = userEvent.setup()
+    renderAt("2026-10-17T12:20", <Home />)
+    await user.click(
+      within(screen.getByRole("listitem", { name: "서관 직원식당" })).getByRole(
+        "button",
+        { name: "서관 직원식당" }
+      )
+    )
+    const sheet = screen.getByRole("dialog", { name: "서관 직원식당" })
+    expect(within(sheet).getByText("오늘은 운영하지 않아요")).toBeInTheDocument()
+    expect(within(sheet).queryByRole("list", { name: /예상 대기/ })).toBeNull()
+    expect(
+      within(sheet).getByRole("table", { name: "서관 직원식당 평소 혼잡 패턴" })
+    ).toBeInTheDocument()
+  })
+
   it("has a single h1", () => {
     renderAt("2026-10-14T12:20", <Home />)
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1)

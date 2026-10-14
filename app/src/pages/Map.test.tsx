@@ -82,6 +82,31 @@ describe("Map", () => {
     ).toBeInTheDocument()
   })
 
+  it("preselects the pin named in ?venue=", () => {
+    renderAt("2026-10-14T12:20", <MapPage />, { route: "/map?venue=new" })
+    expect(
+      screen.getByRole("button", { name: "신관 직원식당 위치" })
+    ).toHaveAttribute("aria-pressed", "true")
+    expect(
+      screen.getByRole("button", { name: "동관 직원식당 위치" })
+    ).toHaveAttribute("aria-pressed", "false")
+    expect(screen.getByText("신관 지하 1층(추정)")).toBeInTheDocument()
+  })
+
+  it("accepts boxLunch and ignores an unknown ?venue=", () => {
+    const { unmount } = renderAt("2026-10-14T12:20", <MapPage />, {
+      route: "/map?venue=boxLunch",
+    })
+    expect(
+      screen.getByRole("button", { name: "간편식 도시락 위치" })
+    ).toHaveAttribute("aria-pressed", "true")
+    unmount()
+    renderAt("2026-10-14T12:20", <MapPage />, { route: "/map?venue=annex" })
+    expect(
+      screen.getByRole("button", { name: "동관 직원식당 위치" })
+    ).toHaveAttribute("aria-pressed", "true")
+  })
+
   it("moves selection to the pressed pin", async () => {
     renderAt("2026-10-14T12:20", <MapPage />)
     const box = screen.getByRole("button", { name: "간편식 도시락 위치" })

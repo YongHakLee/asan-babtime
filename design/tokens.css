@@ -23,6 +23,15 @@
   --status-queue: #b4470c;
   --status-busy: #b42318;
 
+  /*
+   * 혼잡 패턴 칸 바탕: 상태색을 카드에 섞은 옅은 면. 단계가 오를수록 진해지고(명도 단조),
+   * 칸 안 글자(foreground)는 모든 단계에서 4.5:1 이상이다(최저 혼잡 4.59).
+   */
+  --status-ok-tint: color-mix(in srgb, var(--status-ok) 12%, var(--card));
+  --status-mid-tint: color-mix(in srgb, var(--status-mid) 28%, var(--card));
+  --status-queue-tint: color-mix(in srgb, var(--status-queue) 44%, var(--card));
+  --status-busy-tint: color-mix(in srgb, var(--status-busy) 60%, var(--card));
+
   --zone-green-bg: #ddf3df;
   --zone-green-fg: #1f6b2e;
   --zone-orange-bg: #ffe6cc;
@@ -49,6 +58,12 @@
   --status-mid: #dcc27e;
   --status-queue: #e8a982;
   --status-busy: #e89c95;
+
+  /* 다크: 단계가 오를수록 밝아진다. 글자 대비 최저 4.64(혼잡) */
+  --status-ok-tint: color-mix(in srgb, var(--status-ok) 8%, var(--card));
+  --status-mid-tint: color-mix(in srgb, var(--status-mid) 18%, var(--card));
+  --status-queue-tint: color-mix(in srgb, var(--status-queue) 32%, var(--card));
+  --status-busy-tint: color-mix(in srgb, var(--status-busy) 46%, var(--card));
 
   --zone-green-bg: #1e3326;
   --zone-green-fg: #9cd3ac;

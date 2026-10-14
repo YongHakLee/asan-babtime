@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useSearchParams } from "react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { InformationCircleIcon } from "@hugeicons/core-free-icons"
 
@@ -12,6 +13,9 @@ import { useClock } from "@/hooks/useClock"
 import { DAY_KIND_LABEL, dayKind } from "@/lib/hours"
 
 const VENUE_ORDER: VenueId[] = ["east", "west", "new", "boxLunch"]
+
+const isVenue = (v: string | null): v is VenueId =>
+  VENUE_ORDER.includes(v as VenueId)
 
 /** 고른 식당의 건물·층·찾아가는 법 */
 function VenueDetails({ id }: { id: VenueId }) {
@@ -53,7 +57,12 @@ function VenueDetails({ id }: { id: VenueId }) {
 
 export default function MapPage() {
   const { now } = useClock()
-  const [selected, setSelected] = useState<VenueId>("east")
+  // 식당 상세의 "지도에서 보기"는 /map?venue={id}로 와서 그 핀을 먼저 고른다
+  const [params] = useSearchParams()
+  const [selected, setSelected] = useState<VenueId>(() => {
+    const v = params.get("venue")
+    return isVenue(v) ? v : "east"
+  })
 
   return (
     <main className="flex flex-1 flex-col">

@@ -24,6 +24,7 @@
 | status-mid (보통) | `#8A5B00` | `#DCC27E` | |
 | status-queue (줄 있음) | `#B4470C` | `#E8A982` | |
 | status-busy (혼잡) | `#B42318` | `#E89C95` | |
+| status-{ok,mid,queue,busy}-tint | 상태색 12 / 28 / 44 / 60% + card | 상태색 8 / 18 / 32 / 46% + card | 평소 혼잡 패턴 칸 바탕(`bg-status-*-tint`). 단계가 오를수록 명도가 한쪽으로 변하고, 칸 안 foreground 대비는 라이트 최저 4.59, 다크 최저 4.64 |
 
 ### 테이크아웃 존 색
 

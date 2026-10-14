@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 
 import {
   BuildingTile,
@@ -7,6 +7,7 @@ import {
 import { ForecastBars } from "@/components/common/ForecastBars"
 import { ServiceStrip } from "@/components/common/ServiceStrip"
 import { StatusLines, StatusText } from "@/components/common/StatusText"
+import { HallDetailSheet } from "@/components/home/HallDetailSheet"
 import { WorkBuildingChip } from "@/components/home/WorkBuildingSheet"
 import { Separator } from "@/components/ui/separator"
 import { DINING_HALLS as HALLS, VENUES } from "@/data/restaurants"
@@ -34,6 +35,7 @@ import {
 } from "@/lib/hours"
 import { getCourses, MENU_WEEK_LABEL, summary } from "@/lib/menu"
 import { forecast, homeHeadline, MEAL_LABEL } from "@/lib/recommend"
+import { cn } from "@/lib/utils"
 import { walkMinutes } from "@/lib/walk"
 
 const MEALS: MealKey[] = ["breakfast", "lunch", "dinner", "mobile", "lateNight"]
@@ -89,6 +91,7 @@ function Row({
   status,
   extra,
   walk,
+  onOpen,
 }: {
   name: string
   glyph: BuildingGlyph
@@ -98,14 +101,35 @@ function Row({
   extra?: ReactNode
   /** 근무 건물에서 걸어서 걸리는 시간(분). 설정했을 때만 */
   walk?: number
+  /** 있으면 줄 전체가 상세 시트를 여는 버튼이 된다 */
+  onOpen?: () => void
 }) {
   return (
-    <div className="grid grid-cols-[2.125rem_minmax(0,1fr)_auto] items-start gap-x-3 py-3.5">
+    <div
+      className={cn(
+        "grid grid-cols-[2.125rem_minmax(0,1fr)_auto] items-start gap-x-3 py-3.5",
+        onOpen &&
+          "relative -mx-2 rounded-xl px-2 transition-colors has-[[data-slot=row-trigger]:hover]:bg-accent/60 motion-reduce:transition-none"
+      )}
+    >
       <BuildingTile glyph={glyph} tone={tone} />
       <div className="min-w-0 pt-px">
         <div className="flex flex-wrap items-baseline gap-x-2">
           <h2 className="text-[0.9375rem] leading-snug font-semibold tracking-tight">
-            {name}
+            {onOpen ? (
+              // 이름 버튼의 ::after가 줄 전체를 덮어 어디를 눌러도 열린다(이름은 짧게 유지)
+              <button
+                type="button"
+                data-slot="row-trigger"
+                aria-haspopup="dialog"
+                onClick={onOpen}
+                className="text-left outline-none after:absolute after:inset-0 after:rounded-xl after:content-[''] focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50"
+              >
+                {name}
+              </button>
+            ) : (
+              name
+            )}
           </h2>
           {walk !== undefined && (
             <span className="text-xs text-muted-foreground tabular-nums">
@@ -128,9 +152,11 @@ function Row({
 function HallRow({
   hall,
   from,
+  onOpen,
 }: {
   hall: DiningHallId
   from: BuildingId | null
+  onOpen: () => void
 }) {
   const { now } = useClock()
   const { meal, status, level, waitMinutes } = useVenueStatus(hall)
@@ -144,6 +170,7 @@ function HallRow({
         name={venue.name}
         glyph={venue.short}
         walk={walk}
+        onOpen={onOpen}
         menu={summary(getCourses(status.opensAt, hall, meal))}
         status={<StatusText level={level} waitMinutes={waitMinutes} />}
         extra={busy && <ForecastBars points={forecast(hall, meal, now)} />}
@@ -157,6 +184,7 @@ function HallRow({
       name={venue.name}
       glyph={venue.short}
       walk={walk}
+      onOpen={onOpen}
       menu={idle.menu}
       status={
         <StatusLines
@@ -242,6 +270,8 @@ export default function HomePage() {
   const { workBuilding } = usePrefs()
   const { title, detail, tiles } = homeHeadline(now, workBuilding)
   const strip = stripFor(now)
+  const [sheetHall, setSheetHall] = useState<DiningHallId>("east")
+  const [sheetOpen, setSheetOpen] = useState(false)
 
   return (
     <main className="@container flex flex-1 flex-col lg:flex-row lg:bg-deep">
@@ -284,7 +314,14 @@ export default function HomePage() {
           {HALLS.map((hall, i) => (
             <li key={hall} aria-label={VENUES[hall].name}>
               {i > 0 && <Separator />}
-              <HallRow hall={hall} from={workBuilding} />
+              <HallRow
+                hall={hall}
+                from={workBuilding}
+                onOpen={() => {
+                  setSheetHall(hall)
+                  setSheetOpen(true)
+                }}
+              />
             </li>
           ))}
           <li aria-label={VENUES.boxLunch.name}>
@@ -292,6 +329,11 @@ export default function HomePage() {
             <BoxLunchRow />
           </li>
         </ul>
+        <HallDetailSheet
+          hall={sheetHall}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+        />
         <p className="mt-auto flex flex-wrap gap-x-2 pt-6 text-[0.6875rem] text-muted-foreground">
           <span>모의 데이터 기반 예측 시연</span>
           <span aria-hidden>·</span>
