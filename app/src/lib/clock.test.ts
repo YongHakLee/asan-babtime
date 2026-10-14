@@ -41,4 +41,14 @@ describe("createClock", () => {
     c.tick()
     expect(fn).toHaveBeenCalledTimes(1)
   })
+
+  it("demoVersion counts explicit setDemo calls, not ticks", () => {
+    const c = createClock(() => 0)
+    expect(c.demoVersion()).toBe(0)
+    c.tick()
+    expect(c.demoVersion()).toBe(0)
+    c.setDemo(new Date(0))
+    c.setDemo(null)
+    expect(c.demoVersion()).toBe(2)
+  })
 })

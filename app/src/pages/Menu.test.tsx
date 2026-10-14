@@ -1,11 +1,13 @@
-import { screen, within } from "@testing-library/react"
+import { act, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it } from "vitest"
 
+import { createClock } from "@/lib/clock"
 import { setSoldOut } from "@/lib/override"
 import { getFavorites, getSubscriptions } from "@/lib/prefs"
 import Menu from "@/pages/Menu"
 import { renderAt } from "@/test/render"
+import { t } from "@/test/time"
 
 /** "오늘 남은 수량" 문단(라벨과 큰 숫자가 나뉘어 있어 문단 전체 글로 찾는다) */
 const leftCount = () =>
@@ -172,5 +174,48 @@ describe("Menu", () => {
     expect(
       screen.getByText("주말에는 간편식 도시락이 없어요")
     ).toBeInTheDocument()
+  })
+
+  it("keeps the chosen day and meal when the live clock crosses a service boundary", async () => {
+    let real = t("2026-10-14T14:59").getTime()
+    const clock = createClock(() => real)
+    renderAt("2026-10-14T14:59", <Menu />, { clock })
+    const meals = () => screen.getByRole("group", { name: "끼니" })
+    const days = () => screen.getByRole("group", { name: "날짜" })
+    await userEvent.click(within(meals()).getByRole("button", { name: "조식" }))
+    await userEvent.click(
+      within(days()).getByRole("button", { name: /목요일/ })
+    )
+
+    real = t("2026-10-14T15:02").getTime()
+    act(() => clock.tick())
+    expect(
+      within(meals()).getByRole("button", { name: "조식" })
+    ).toHaveAttribute("aria-pressed", "true")
+    expect(
+      within(days()).getByRole("button", { name: /목요일/ })
+    ).toHaveAttribute("aria-pressed", "true")
+
+    // 시연 중에도 시간이 흐르는 것만으로는 선택이 바뀌지 않는다
+    act(() => clock.setDemo(t("2026-10-15T07:00")))
+    await userEvent.click(within(meals()).getByRole("button", { name: "야식" }))
+    real += 2 * 3600_000
+    act(() => clock.tick())
+    expect(
+      within(meals()).getByRole("button", { name: "야식" })
+    ).toHaveAttribute("aria-pressed", "true")
+  })
+
+  it("resets the selection when the demo time is set explicitly", async () => {
+    let real = t("2026-10-14T12:20").getTime()
+    const clock = createClock(() => real)
+    renderAt("2026-10-14T12:20", <Menu />, { clock })
+    const meals = () => screen.getByRole("group", { name: "끼니" })
+    await userEvent.click(within(meals()).getByRole("button", { name: "야식" }))
+    real += 1000
+    act(() => clock.setDemo(t("2026-10-14T12:40")))
+    expect(
+      within(meals()).getByRole("button", { name: "중식" })
+    ).toHaveAttribute("aria-pressed", "true")
   })
 })

@@ -71,7 +71,7 @@ function DayPicker({
       onValueChange={(v) => {
         if (v[0] !== undefined) onChange(Number(v[0]))
       }}
-      spacing={1}
+      spacing={0.5}
       className="grid w-full grid-cols-7 md:max-w-xl"
     >
       {days.map((d, i) => {
@@ -123,7 +123,7 @@ function MealPicker({
         <ToggleGroupItem
           key={m}
           value={m}
-          className="h-10 flex-1 border border-border px-0 text-[0.8125rem] aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold aria-pressed:text-primary"
+          className="h-11 flex-1 border border-border px-0 text-[0.8125rem] aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold aria-pressed:text-primary"
         >
           {MEAL_LABEL[m]}
         </ToggleGroupItem>
@@ -132,7 +132,10 @@ function MealPicker({
   )
 }
 
-function MenuBody({ initial }: { initial: { anchor: Date; meal: MealKey } }) {
+function MenuBody() {
+  const { now } = useClock()
+  // 처음 마운트할 때의 기본값으로 시작하고, 이후 시계가 흘러도 사용자의 선택을 지킨다
+  const [initial] = useState(() => defaults(now))
   const days = weekOf(initial.anchor)
   const today = seoulWeekdayIndex(initial.anchor)
   const [day, setDay] = useState(today)
@@ -164,11 +167,8 @@ function MenuBody({ initial }: { initial: { anchor: Date; meal: MealKey } }) {
 }
 
 export default function MenuPage() {
-  const { now } = useClock()
+  const { demoVersion } = useClock()
   const [tab, setTab] = useState<TabKey>("halls")
-  const initial = defaults(now)
-  // 시연 시각을 바꿔 날이나 기본 끼니가 달라지면 선택을 새로 시작한다
-  const bodyKey = `${seoulYmd(initial.anchor)}|${initial.meal}`
 
   return (
     <main className="flex flex-1 flex-col">
@@ -213,7 +213,8 @@ export default function MenuPage() {
 
         <section className="relative -mt-[18px] flex flex-1 flex-col rounded-t-3xl bg-card px-4 pt-5 pb-8">
           <div className="mx-auto w-full max-w-5xl">
-            <MenuBody key={bodyKey} initial={initial} />
+            {/* 시연 시각을 직접 바꿀 때만 날짜·끼니 선택을 새로 시작한다 */}
+            <MenuBody key={demoVersion} />
           </div>
         </section>
       </Tabs>

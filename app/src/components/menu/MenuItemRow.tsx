@@ -53,10 +53,10 @@ export function MenuItemRow({
       aria-label={item.name}
       className={cn(
         "flex justify-between gap-1",
-        main ? "items-start pb-2" : "items-center"
+        main ? "items-start pb-1" : "items-center"
       )}
     >
-      <div className={cn("min-w-0", main && "pt-1")}>
+      <div className={cn("min-w-0", main && "pt-2.5")}>
         <p
           className={cn(
             "leading-snug wrap-break-word",
@@ -73,9 +73,8 @@ export function MenuItemRow({
         aria-label="즐겨찾기"
         pressed={on}
         onPressedChange={() => toggleFavorite(item.name)}
-        size="sm"
         className={cn(
-          "-mr-2 shrink-0 text-muted-foreground/60 hover:bg-transparent hover:text-primary aria-pressed:bg-transparent aria-pressed:text-primary [&_svg]:transition-colors aria-pressed:[&_svg]:fill-current motion-reduce:[&_svg]:transition-none",
+          "-mr-3.5 size-11 min-w-11 shrink-0 px-0 text-muted-foreground/60 hover:bg-transparent hover:text-primary aria-pressed:bg-transparent aria-pressed:text-primary [&_svg]:transition-colors aria-pressed:[&_svg]:fill-current motion-reduce:[&_svg]:transition-none",
           !main &&
             "text-muted-foreground/45 [&_svg:not([class*='size-'])]:size-[0.9375rem]"
         )}

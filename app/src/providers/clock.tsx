@@ -11,11 +11,13 @@ import { createClock, type Clock } from "@/lib/clock"
 
 const TICK_MS = 30_000
 
-type Snap = { now: Date; isDemo: boolean }
+type Snap = { now: Date; isDemo: boolean; demoVersion: number }
 
 export type ClockValue = {
   now: Date
   isDemo: boolean
+  /** 시연 시각을 직접 바꿀 때마다 1씩 는다. 화면 선택을 새로 시작할 때 쓴다. */
+  demoVersion: number
   setDemo: (at: Date | null) => void
 }
 
@@ -40,7 +42,11 @@ export function ClockProvider({
   // getSnapshot은 변경 때만 새 객체를 만들어 참조를 안정적으로 유지.
   // now와 isDemo를 한 스냅샷에 담아 항상 서로 일치시킨다.
   const store = useMemo(() => {
-    const read = (): Snap => ({ now: clock.now(), isDemo: clock.isDemo() })
+    const read = (): Snap => ({
+      now: clock.now(),
+      isDemo: clock.isDemo(),
+      demoVersion: clock.demoVersion(),
+    })
     const cache = { snap: read() }
     return {
       subscribe: (fn: () => void) => {
@@ -52,6 +58,7 @@ export function ClockProvider({
         const fresh = read()
         if (
           fresh.isDemo !== cache.snap.isDemo ||
+          fresh.demoVersion !== cache.snap.demoVersion ||
           Math.abs(fresh.now.getTime() - cache.snap.now.getTime()) >= 1000
         ) {
           cache.snap = fresh
@@ -62,7 +69,10 @@ export function ClockProvider({
       getSnapshot: () => cache.snap,
     }
   }, [clock])
-  const { now, isDemo } = useSyncExternalStore(store.subscribe, store.getSnapshot)
+  const { now, isDemo, demoVersion } = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot
+  )
 
   useEffect(() => {
     const id = setInterval(() => clock.tick(), TICK_MS)
@@ -70,8 +80,8 @@ export function ClockProvider({
   }, [clock])
 
   const value = useMemo<ClockValue>(
-    () => ({ now, isDemo, setDemo: (at) => clock.setDemo(at) }),
-    [now, isDemo, clock]
+    () => ({ now, isDemo, demoVersion, setDemo: (at) => clock.setDemo(at) }),
+    [now, isDemo, demoVersion, clock]
   )
   return <ClockContext.Provider value={value}>{children}</ClockContext.Provider>
 }
