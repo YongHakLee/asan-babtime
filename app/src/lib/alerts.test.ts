@@ -56,13 +56,30 @@ describe('evaluateAlerts', () => {
     expect(evaluateAlerts(null, snap('2026-10-14T13:29', 'ok'), subs, [], new Set()).some((x) => x.kind === 'closingSoon')).toBe(false)
     expect(evaluateAlerts(null, snap('2026-10-14T14:30', 'ok'), subs, [], new Set()).some((x) => x.key.startsWith('closingSoon:westNew'))).toBe(false)
   })
-  it('sent round-trips and drops older days', () => {
-    saveSent(new Set(['closingSoon:east:2026-10-13:lunch', 'favoriteDay:2026-10-14']), '2026-10-14')
-    expect([...loadSent('2026-10-14')]).toEqual(['favoriteDay:2026-10-14'])
-    expect([...loadSent('2026-10-15')]).toEqual([])
+  it('sent round-trips and drops keys older than two days, keeps future ones', () => {
+    saveSent(
+      new Set(['closingSoon:east:2026-10-11:lunch', 'closingSoon:east:2026-10-12:lunch', 'favoriteDay:2026-10-14', 'favoriteDay:2026-10-16']),
+      '2026-10-14',
+    )
+    expect([...loadSent('2026-10-14')].sort()).toEqual(['closingSoon:east:2026-10-12:lunch', 'favoriteDay:2026-10-14', 'favoriteDay:2026-10-16'])
+    expect([...loadSent('2026-10-17')].sort()).toEqual(['favoriteDay:2026-10-16'])
   })
-  it('prunes sent keys of other days', () =>
-    expect(pruneSent(['closingSoon:east:2026-10-13:lunch', 'favoriteDay:2026-10-14'], '2026-10-14')).toEqual(['favoriteDay:2026-10-14']))
+  it('prunes sent keys by age relative to the evaluated date', () =>
+    expect(
+      pruneSent(['closingSoon:east:2026-10-11:lunch', 'closingSoon:east:2026-10-13:lunch', 'favoriteDay:2026-10-14', 'favoriteDay:eve:2026-10-20'], '2026-10-14'),
+    ).toEqual(['closingSoon:east:2026-10-13:lunch', 'favoriteDay:2026-10-14', 'favoriteDay:eve:2026-10-20']))
+  it('saveSent does not write when the kept set is unchanged', () => {
+    saveSent(new Set(['favoriteDay:2026-10-14']), '2026-10-14')
+    const spy = vi.spyOn(Storage.prototype, 'setItem')
+    try {
+      saveSent(new Set(['favoriteDay:2026-10-14']), '2026-10-14')
+      expect(spy).not.toHaveBeenCalled()
+      saveSent(new Set(['favoriteDay:2026-10-14', 'closingSoon:east:2026-10-14:lunch']), '2026-10-14')
+      expect(spy).toHaveBeenCalledTimes(1)
+    } finally {
+      spy.mockRestore()
+    }
+  })
 })
 
 describe('deliverAlert', () => {

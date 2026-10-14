@@ -17,6 +17,8 @@ function level(hall: DiningHallId, at: Date): CongestionLevel {
 export function useAlertsEngine(): void {
   const { now } = useClock()
   const prev = useRef<AlertSnapshot | null>(null)
+  // 이 탭이 이미 보낸 키. 다른 탭이 저장소 기록을 지워도 같은 알림을 다시 보내지 않는다.
+  const delivered = useRef(new Set<string>())
 
   useEffect(() => {
     const next: AlertSnapshot = {
@@ -25,12 +27,14 @@ export function useAlertsEngine(): void {
     }
     const today = seoulYmd(now)
     const sent = loadSent(today)
+    delivered.current.forEach((k) => sent.add(k))
     const alerts = evaluateAlerts(prev.current, next, getSubscriptions(), getFavorites(), sent)
     for (const a of alerts) {
       deliverAlert(a)
       sent.add(a.key)
+      delivered.current.add(a.key)
     }
-    saveSent(sent, today)
+    if (alerts.length > 0) saveSent(sent, today)
     prev.current = next
   }, [now])
 }

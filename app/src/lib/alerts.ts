@@ -186,16 +186,34 @@ export async function requestPermission(): Promise<'granted' | 'denied' | 'unsup
 }
 
 const SENT_KEY = 'alerts.sent'
+const KEEP_DAYS = 2
+const DATE_RE = /\d{4}-\d{2}-\d{2}/
 
-/** 오늘 날짜가 들어간 키만 남긴다. */
+function daysBefore(ymd: string, n: number): string {
+  const [y, m, d] = ymd.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d - n)).toISOString().slice(0, 10)
+}
+
+/**
+ * 평가 시각 기준 최근 2일(그 이전 날짜는 버림)과 미래 날짜의 키를 남긴다.
+ * 탭마다 시연 날짜가 달라도 서로의 기록을 지우지 않도록 '오늘'만 남기지 않는다.
+ */
 export function pruneSent(keys: string[], today: string): string[] {
-  return keys.filter((k) => k.includes(today))
+  const oldest = daysBefore(today, KEEP_DAYS)
+  return keys.filter((k) => {
+    const date = k.match(DATE_RE)?.[0]
+    return date !== undefined && date >= oldest
+  })
 }
 
 export function loadSent(today: string): Set<string> {
   return new Set(pruneSent(storage.get<string[]>(SENT_KEY, []), today))
 }
 
+/** 남길 키 집합이 저장된 것과 같으면 쓰지 않는다(쓰기가 다른 탭을 깨우지 않게). */
 export function saveSent(sent: ReadonlySet<string>, today: string): void {
-  storage.set(SENT_KEY, pruneSent([...sent], today))
+  const next = pruneSent([...sent], today)
+  const current = new Set(pruneSent(storage.get<string[]>(SENT_KEY, []), today))
+  if (next.length === current.size && next.every((k) => current.has(k))) return
+  storage.set(SENT_KEY, next)
 }

@@ -22,6 +22,7 @@ export interface SoldOut {
 const OVERRIDE_KEY = 'overrides'
 const SOLDOUT_KEY = 'soldout'
 const CHANNEL = 'babttae'
+const WATCHED_KEYS = [`babttae.${OVERRIDE_KEY}`, `babttae.${SOLDOUT_KEY}`]
 export const OVERRIDE_TTL_MS = 15 * 60_000
 
 type OverrideMap = Partial<Record<DiningHallId, Override>>
@@ -70,8 +71,10 @@ export function isSoldOut(hall: DiningHallId, meal: MealKey, course: string | un
 
 export function subscribeOverrides(fn: () => void): () => void {
   listeners.add(fn)
+  // 직원 입력·품절 키만 본다. 알림 기록 같은 다른 키에 반응하면 탭끼리 서로 깨우며 끝없이 돈다.
+  // key가 null이면 저장소 전체가 비워진 것(clear)이라 입력도 사라졌다.
   const onStorage = (e: StorageEvent) => {
-    if (e.key === null || e.key.startsWith('babttae.')) fn()
+    if (e.key === null || WATCHED_KEYS.includes(e.key)) fn()
   }
   window.addEventListener('storage', onStorage)
   return () => {
