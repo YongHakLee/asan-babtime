@@ -9,7 +9,7 @@ const seoulFmt = new Intl.DateTimeFormat('en-CA', {
 })
 
 /** Asia/Seoul calendar date as YYYY-MM-DD, independent of machine TZ. */
-function seoulYmd(d: Date): string {
+export function seoulYmd(d: Date): string {
   const p = Object.fromEntries(seoulFmt.formatToParts(d).map((x) => [x.type, x.value]))
   return `${p.year}-${p.month}-${p.day}`
 }
