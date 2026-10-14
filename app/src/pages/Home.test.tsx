@@ -51,6 +51,13 @@ describe("Home", () => {
     expect(within(east).queryByText(/줄 있음|혼잡|여유|보통/)).toBeNull()
   })
 
+  it("after midnight shows the late-night menu of the day it started", () => {
+    // 목 00:30은 수요일 23:30에 시작한 야식이 진행 중이다
+    renderAt("2026-10-15T00:30", <Home />)
+    const east = screen.getByRole("listitem", { name: "동관 직원식당" })
+    expect(within(east).getByText("감자수제비(뚝), 너비아니조림")).toBeInTheDocument()
+  })
+
   it("shows weekend closure in words", () => {
     renderAt("2026-10-17T12:20", <Home />)
     const west = screen.getByRole("listitem", { name: "서관·신관 직원식당" })

@@ -123,7 +123,7 @@ function HallRow({ hall }: { hall: DiningHallId }) {
       <Row
         name={venue.name}
         glyph={venue.short}
-        menu={summary(getCourses(now, hall, meal))}
+        menu={summary(getCourses(status.opensAt, hall, meal))}
         status={<StatusText level={level} waitMinutes={waitMinutes} />}
         extra={busy && <ForecastBars points={forecast(hall, meal, now)} />}
       />

@@ -1,4 +1,5 @@
 import type { DiningHallId, MealKey } from '@/domain/types'
+import { getServiceStatus } from '@/lib/hours'
 import { dayPopularity } from '@/lib/menu'
 import { getActiveOverride } from '@/lib/override'
 import { simulateQueue, type CongestionLevel } from '@/lib/queue'
@@ -9,7 +10,10 @@ export function effectiveWait(
   meal: MealKey,
   at: Date,
 ): { waitMinutes: number; level: CongestionLevel; source: 'model' | 'staff' } {
-  const sim = simulateQueue(hall, meal, at, dayPopularity(at, hall, meal))
+  // 자정을 넘긴 야식은 시작한 날의 메뉴(인기도)를 쓴다
+  const s = getServiceStatus(hall, meal, at)
+  const day = s.kind === 'open' ? s.opensAt : at
+  const sim = simulateQueue(hall, meal, at, dayPopularity(day, hall, meal))
   const o = getActiveOverride(hall)
   if (o?.kind === 'queue') return { waitMinutes: Math.max(sim.waitMinutes, 5), level: 'queue', source: 'staff' }
   if (o?.kind === 'clear') return { waitMinutes: 0, level: 'ok', source: 'staff' }
