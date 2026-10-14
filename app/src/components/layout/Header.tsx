@@ -42,7 +42,7 @@ export function Header() {
                   end={to === "/"}
                   className={({ isActive }) =>
                     cn(
-                      "rounded-4xl px-3 py-1.5 text-sm",
+                      "flex h-11 items-center rounded-4xl px-4 text-sm",
                       isActive
                         ? "bg-deep-foreground/15 font-semibold"
                         : "opacity-80 hover:opacity-100"
@@ -64,8 +64,7 @@ export function Header() {
         <div className="flex basis-full items-center justify-between gap-2 md:basis-auto">
           <Button
             variant="ghost"
-            size="sm"
-            className="hover:bg-deep-foreground/15 hover:text-deep-foreground"
+            className="h-11 px-4 hover:bg-deep-foreground/15 hover:text-deep-foreground"
             onClick={() => setDemoOpen(true)}
           >
             <HugeiconsIcon icon={Timer02Icon} data-icon="inline-start" />
@@ -83,8 +82,7 @@ export function Header() {
               <ToggleGroupItem
                 key={value}
                 value={value}
-                size="sm"
-                className="text-deep-foreground hover:bg-deep-foreground/15 hover:text-deep-foreground aria-pressed:bg-deep-foreground/25"
+                className="h-11 min-w-11 text-deep-foreground hover:bg-deep-foreground/15 hover:text-deep-foreground aria-pressed:bg-deep-foreground/25"
               >
                 <HugeiconsIcon icon={icon} strokeWidth={2} />
                 <span className="sr-only">{label}</span>
