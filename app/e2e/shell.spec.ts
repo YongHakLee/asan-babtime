@@ -104,9 +104,14 @@ test("home lists every venue at demo Wed 12:20", async ({ page }) => {
   for (let i = 0; i < 88; i++) await page.keyboard.press("ArrowRight")
   await sheet.getByRole("button", { name: "이 시각으로 보기" }).click()
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "지금은 서관·신관이 바로 드실 수 있어요"
+    "지금은 신관이 바로 드실 수 있어요"
   )
-  for (const name of ["동관 직원식당", "서관·신관 직원식당", "간편식 도시락"]) {
+  for (const name of [
+    "동관 직원식당",
+    "서관 직원식당",
+    "신관 직원식당",
+    "간편식 도시락",
+  ]) {
     await expect(page.getByRole("listitem", { name })).toBeVisible()
   }
   expect(

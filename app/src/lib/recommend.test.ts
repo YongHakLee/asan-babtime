@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getServiceStatus } from '@/lib/hours'
 import { setOverride } from '@/lib/override'
+import { effectiveWait } from '@/lib/status'
 
 import { t } from '@/test/time'
 
@@ -11,9 +12,9 @@ describe('recommend', () => {
   beforeEach(() => localStorage.clear())
   it('Wednesday 12:20 headline', () => {
     const h = homeHeadline(t('2026-10-14T12:20'))
-    expect(h.title).toBe('지금은 서관·신관이 바로 드실 수 있어요')
-    expect(h.detail).toBe('동관은 13시 15분부터 한산해질 것으로 보여요')
-    expect(h.tiles).toEqual(['서', '신'])
+    expect(h.title).toBe('지금은 신관이 바로 드실 수 있어요')
+    expect(h.detail).toBe('동관은 13시 15분, 서관은 12시 45분부터 한산해질 것으로 보여요')
+    expect(h.tiles).toEqual(['신'])
   })
   it('15:30 shows next service', () =>
     expect(homeHeadline(t('2026-10-14T15:30')).title).toBe('다음 배식은 석식 17:30부터예요'))
@@ -34,10 +35,10 @@ describe('recommend', () => {
     const at = t('2026-10-14T12:20')
     setOverride('east', 'queue', at)
     const h = homeHeadline(at)
-    expect(h.title).toBe('지금은 서관·신관이 바로 드실 수 있어요')
+    expect(h.title).toBe('지금은 신관이 바로 드실 수 있어요')
     const r = recommendTime('east', 'lunch', at)!
     expect(r.getTime()).toBeGreaterThanOrEqual(at.getTime() + 15 * 60_000 - 1000)
-    expect(h.detail).toMatch(/^동관은 .+부터 한산해질 것으로 보여요$/)
+    expect(h.detail).toMatch(/^동관은 .+, 서관은 .+부터 한산해질 것으로 보여요$/)
   })
   it('override expiry in demo terms uses the real time left (at + TTL - real elapsed)', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
@@ -52,18 +53,31 @@ describe('recommend', () => {
       vi.useRealTimers()
     }
   })
-  it('clear override on east: east wins the tie, no clearing detail', () => {
+  it('clear override on east: east wins the tie, west still clears later', () => {
     const at = t('2026-10-14T12:20')
     setOverride('east', 'clear', at)
     const h = homeHeadline(at)
     expect(h.title).toBe('지금은 동관이 바로 드실 수 있어요')
-    expect(h.detail).toBeNull()
+    expect(h.tiles).toEqual(['동'])
+    expect(h.detail).toBe('서관은 12시 45분부터 한산해질 것으로 보여요')
+  })
+  it('tie order is east, west, new', () => {
+    const at = t('2026-10-14T12:20')
+    setOverride('west', 'clear', at)
+    expect(homeHeadline(at)).toMatchObject({ title: '지금은 서관이 바로 드실 수 있어요', tiles: ['서'] })
+    expect(homeHeadline(at).detail).toBe('동관은 13시 15분부터 한산해질 것으로 보여요')
+  })
+  it('no detail when the others are already quiet', () => {
+    const at = t('2026-10-14T12:20')
+    setOverride('east', 'clear', at)
+    setOverride('west', 'clear', at)
+    expect(homeHeadline(at)).toMatchObject({ title: '지금은 동관이 바로 드실 수 있어요', detail: null })
   })
   it('fastest-wait branch', () =>
     expect(homeHeadline(t('2026-10-17T12:20')).title).toBe('지금은 동관이 가장 빨라요, 약 6분 기다려요'))
   it('recommendTime returns exactly at when already quiet', () => {
     const at = t('2026-10-14T12:20')
-    expect(recommendTime('westNew', 'lunch', at)!.getTime()).toBe(at.getTime())
+    expect(recommendTime('new', 'lunch', at)!.getTime()).toBe(at.getTime())
   })
   it('forecast covers the window in 10 minute buckets', () => {
     const at = t('2026-10-14T12:20')
@@ -78,4 +92,17 @@ describe('recommend', () => {
     expect(koreanTime(t('2026-10-14T13:00'))).toBe('13시')
     expect(koreanTime(t('2026-10-14T13:05'))).toBe('13시 5분')
   })
+})
+
+describe('three dining halls', () => {
+  beforeEach(() => localStorage.clear())
+  it('Wed 12:20 three halls', () => {
+    const at = t('2026-10-14T12:20')
+    expect(['queue', 'busy']).toContain(effectiveWait('east', 'lunch', at).level)
+    expect(effectiveWait('west', 'lunch', at).level).toBe('queue')
+    expect(effectiveWait('new', 'lunch', at).level).toBe('ok')
+    expect(homeHeadline(at)).toMatchObject({ title: '지금은 신관이 바로 드실 수 있어요', tiles: ['신'] })
+    expect(homeHeadline(at).detail).toMatch(/^동관은 \d+시( \d+분)?, 서관은 \d+시( \d+분)?부터 한산해질 것으로 보여요$/)
+  })
+  it('Saturday: only east', () => expect(homeHeadline(t('2026-10-17T12:20')).detail).toBe('주말과 공휴일에는 동관만 운영해요'))
 })

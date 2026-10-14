@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 
+import { DINING_HALLS } from '@/data/restaurants'
 import type { DiningHallId } from '@/domain/types'
 import { useClock } from '@/hooks/useClock'
 import { deliverAlert, evaluateAlerts, loadSent, saveSent, type AlertSnapshot } from '@/lib/alerts'
@@ -23,7 +24,7 @@ export function useAlertsEngine(): void {
   useEffect(() => {
     const next: AlertSnapshot = {
       at: now,
-      levels: { east: level('east', now), westNew: level('westNew', now) },
+      levels: Object.fromEntries(DINING_HALLS.map((h) => [h, level(h, now)])) as AlertSnapshot['levels'],
     }
     const today = seoulYmd(now)
     const sent = loadSent(today)

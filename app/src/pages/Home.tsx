@@ -8,7 +8,7 @@ import { ForecastBars } from "@/components/common/ForecastBars"
 import { ServiceStrip } from "@/components/common/ServiceStrip"
 import { StatusLines, StatusText } from "@/components/common/StatusText"
 import { Separator } from "@/components/ui/separator"
-import { VENUES } from "@/data/restaurants"
+import { DINING_HALLS as HALLS, VENUES } from "@/data/restaurants"
 import type {
   DiningHallId,
   MealKey,
@@ -32,7 +32,6 @@ import {
 import { getCourses, MENU_WEEK_LABEL, summary } from "@/lib/menu"
 import { forecast, homeHeadline, MEAL_LABEL } from "@/lib/recommend"
 
-const HALLS: DiningHallId[] = ["east", "westNew"]
 const MEALS: MealKey[] = ["breakfast", "lunch", "dinner", "mobile", "lateNight"]
 const DAY_MS = 86_400_000
 
@@ -257,13 +256,12 @@ export default function HomePage() {
       >
         {strip && <ServiceStrip meal={strip.meal} status={strip.status} />}
         <ul className="mt-1.5 flex flex-col">
-          <li aria-label={VENUES.east.name}>
-            <HallRow hall="east" />
-          </li>
-          <li aria-label={VENUES.westNew.name}>
-            <Separator />
-            <HallRow hall="westNew" />
-          </li>
+          {HALLS.map((hall, i) => (
+            <li key={hall} aria-label={VENUES[hall].name}>
+              {i > 0 && <Separator />}
+              <HallRow hall={hall} />
+            </li>
+          ))}
           <li aria-label={VENUES.boxLunch.name}>
             <Separator />
             <BoxLunchRow />

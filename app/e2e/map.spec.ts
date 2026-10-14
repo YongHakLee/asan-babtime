@@ -9,16 +9,16 @@ test("map pins are 44px and do not overlap at 360px", async ({
   const pins = page
     .getByRole("group", { name: "식당 위치" })
     .getByRole("button")
-  await expect(pins).toHaveCount(3)
+  await expect(pins).toHaveCount(4)
   const boxes = []
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     const b = (await pins.nth(i).boundingBox())!
     expect(b.width).toBeGreaterThanOrEqual(44)
     expect(b.height).toBeGreaterThanOrEqual(44)
     boxes.push(b)
   }
-  for (let i = 0; i < 3; i++)
-    for (let j = i + 1; j < 3; j++) {
+  for (let i = 0; i < 4; i++)
+    for (let j = i + 1; j < 4; j++) {
       const [a, b] = [boxes[i], boxes[j]]
       const overlap =
         a.x < b.x + b.width &&

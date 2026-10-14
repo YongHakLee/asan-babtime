@@ -17,7 +17,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { toast } from "@/components/ui/toast"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import type { MealKey } from "@/domain/types"
+import type { DiningHallId, MealKey } from "@/domain/types"
 import { useClock } from "@/hooks/useClock"
 import { usePrefs } from "@/hooks/usePrefs"
 import { requestPermission } from "@/lib/alerts"
@@ -36,13 +36,14 @@ type Row = {
   label: string
   description?: string
 } & (
-  | { hall: "east" | "westNew" }
+  | { hall: DiningHallId }
   | { flag: "favoriteDay" | "boxLunchDeadline" | "closingSoon" }
 )
 
 const ROWS: Row[] = [
   { id: "sub-east", label: "동관 대기가 줄면 알려주기", hall: "east" },
-  { id: "sub-west", label: "서관·신관 대기가 줄면 알려주기", hall: "westNew" },
+  { id: "sub-west", label: "서관 대기가 줄면 알려주기", hall: "west" },
+  { id: "sub-new", label: "신관 대기가 줄면 알려주기", hall: "new" },
   {
     id: "sub-fav",
     label: "즐겨찾는 메뉴가 나오는 날",

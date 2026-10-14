@@ -34,11 +34,12 @@ const BLOCKS: {
 /** 핀을 고르면 함께 강조할 블록 */
 const AREAS: Record<VenueId, BlockKey[]> = {
   east: ["east"],
-  westNew: ["new", "link", "west"],
+  west: ["west"],
+  new: ["new"],
   boxLunch: ["east"],
 }
 
-const ORDER: VenueId[] = ["westNew", "east", "boxLunch"]
+const ORDER: VenueId[] = ["new", "west", "east", "boxLunch"]
 
 const pct = (v: number, of: number) => `${(v / of) * 100}%`
 

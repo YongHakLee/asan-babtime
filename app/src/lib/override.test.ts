@@ -9,6 +9,7 @@ import {
   setSoldOut,
   subscribeOverrides,
 } from '@/lib/override'
+import { getSubscriptions } from '@/lib/prefs'
 
 describe('overrides', () => {
   afterEach(() => vi.useRealTimers())
@@ -55,5 +56,32 @@ describe('subscribeOverrides storage events', () => {
     } finally {
       off()
     }
+  })
+})
+
+describe('legacy westNew values', () => {
+  it('are ignored without errors', () => {
+    localStorage.setItem(
+      'babttae.subscriptions',
+      JSON.stringify({ queueCleared: ['westNew', 'east'], favoriteDay: false, boxLunchDeadline: false, closingSoon: false }),
+    )
+    expect(getSubscriptions().queueCleared).toEqual(['east'])
+    const now = Date.now()
+    localStorage.setItem('babttae.overrides', JSON.stringify({ westNew: { hall: 'westNew', kind: 'queue', at: now, realAt: now } }))
+    expect(() => getActiveOverride('west')).not.toThrow()
+    expect(getActiveOverride('west')).toBeNull()
+    expect(getActiveOverride('new')).toBeNull()
+    // 예전 형식이 배열이어도 오류 없이 무시한다
+    localStorage.setItem('babttae.overrides', JSON.stringify([{ hall: 'westNew', kind: 'queue', at: now, realAt: now }]))
+    expect(getActiveOverride('west')).toBeNull()
+    // 다른 식당 키 아래 엉뚱한 hall이 저장돼 있으면 쓰지 않는다
+    localStorage.setItem('babttae.overrides', JSON.stringify({ west: { hall: 'westNew', kind: 'queue', at: now, realAt: now } }))
+    expect(getActiveOverride('west')).toBeNull()
+    localStorage.setItem('babttae.soldout', JSON.stringify([{ hall: 'westNew', meal: 'lunch', date: '2026-10-14' }]))
+    expect(isSoldOut('west', 'lunch', undefined, t('2026-10-14T12:20'))).toBe(false)
+    setSoldOut({ hall: 'west', meal: 'lunch', date: '2026-10-14' }, true)
+    expect(JSON.parse(localStorage.getItem('babttae.soldout')!)).toEqual([{ hall: 'west', meal: 'lunch', date: '2026-10-14' }])
+    setOverride('new', 'clear', t('2026-10-14T12:20'))
+    expect(Object.keys(JSON.parse(localStorage.getItem('babttae.overrides')!))).toEqual(['new'])
   })
 })

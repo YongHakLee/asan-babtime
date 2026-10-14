@@ -1,5 +1,7 @@
-export type VenueId = 'east' | 'westNew' | 'boxLunch'
-export type DiningHallId = 'east' | 'westNew'
+export type DiningHallId = 'east' | 'west' | 'new'
+export type VenueId = DiningHallId | 'boxLunch'
+/** 메뉴 묶음. 서관·신관은 같은 메뉴(westNew)를 함께 쓴다. */
+export type MenuGroupId = 'east' | 'westNew' | 'boxLunch'
 export type MealKey = 'breakfast' | 'lunch' | 'dinner' | 'lateNight' | 'mobile'
 export type DayKind = 'weekday' | 'saturday' | 'sundayOrHoliday'
 
@@ -24,7 +26,8 @@ export interface Venue {
   id: VenueId
   name: string
   label: string
-  short: '동' | '서' | '도'
+  short: '동' | '서' | '신' | '도'
+  menuGroup: MenuGroupId
   building: string
   floor: string
   location: 'official' | 'estimated'
@@ -67,6 +70,6 @@ export interface TakeoutDay {
 export interface DayMenu {
   /** YYYY-MM-DD (저장된 날짜) */
   date: string
-  meals: Partial<Record<VenueId, Partial<Record<MealKey, Course[]>>>>
+  meals: Partial<Record<MenuGroupId, Partial<Record<MealKey, Course[]>>>>
   takeout: TakeoutDay
 }

@@ -6,7 +6,10 @@ import type { Subscriptions } from '@/lib/prefs'
 import type { CongestionLevel } from '@/lib/queue'
 import { t } from '@/test/time'
 
-const snap = (s: string, east: CongestionLevel, westNew: CongestionLevel = 'ok') => ({ at: t(s), levels: { east, westNew } })
+const snap = (s: string, east: CongestionLevel, west: CongestionLevel = 'ok', nw: CongestionLevel = 'ok') => ({
+  at: t(s),
+  levels: { east, west, new: nw },
+})
 const subs = { queueCleared: ['east'], favoriteDay: true, boxLunchDeadline: true, closingSoon: true } as Subscriptions
 
 describe('evaluateAlerts', () => {
@@ -27,10 +30,22 @@ describe('evaluateAlerts', () => {
     expect(evaluateAlerts(null, snap('2026-10-15T16:45', 'ok'), subs, [], new Set()).some((x) => x.kind === 'boxLunchDeadline')).toBe(true)
     expect(evaluateAlerts(null, snap('2026-10-14T16:45', 'ok'), subs, [], new Set()).some((x) => x.kind === 'boxLunchDeadline')).toBe(false)
   })
-  it('closingSoon for westNew at 13:35', () =>
-    expect(evaluateAlerts(null, snap('2026-10-14T13:35', 'ok'), subs, [], new Set()).some((x) => x.key.startsWith('closingSoon:westNew'))).toBe(true))
-  it('no queueCleared when the hall merely closed (westNew Wed 13:59 busy -> 14:00)', () => {
-    const s2 = { ...subs, queueCleared: ['westNew'] } as Subscriptions
+  it('closingSoon for west and new at 13:35', () => {
+    const a = evaluateAlerts(null, snap('2026-10-14T13:35', 'ok'), subs, [], new Set())
+    expect(a.find((x) => x.key.startsWith('closingSoon:west:'))?.title).toBe('서관 중식 배식이 30분 남았어요')
+    expect(a.find((x) => x.key.startsWith('closingSoon:new:'))?.title).toBe('신관 중식 배식이 30분 남았어요')
+  })
+  it('queueCleared is per hall: new clears, west does not fire', () => {
+    const s2 = { ...subs, queueCleared: ['west', 'new'] } as Subscriptions
+    const a = evaluateAlerts(snap('2026-10-14T12:40', 'busy', 'queue', 'queue'), snap('2026-10-14T12:41', 'busy', 'queue', 'ok'), s2, [], new Set())
+    expect(a.filter((x) => x.kind === 'queueCleared').map((x) => x.title)).toEqual(['신관 대기가 줄었어요'])
+  })
+  it('favoriteDay names the shared west/new menu once', () => {
+    const a = evaluateAlerts(null, snap('2026-10-14T10:31', 'ok'), subs, ['투움바'], new Set()).filter((x) => x.kind === 'favoriteDay')
+    expect(a.map((x) => x.body)).toEqual(['오늘 서관·신관 중식: 투움바파스타'])
+  })
+  it('no queueCleared when the hall merely closed (west Wed 13:59 busy -> 14:00)', () => {
+    const s2 = { ...subs, queueCleared: ['west'] } as Subscriptions
     const a = evaluateAlerts(snap('2026-10-14T13:59', 'ok', 'busy'), snap('2026-10-14T14:00', 'ok', 'ok'), s2, [], new Set())
     expect(a.some((x) => x.kind === 'queueCleared')).toBe(false)
   })
@@ -51,10 +66,10 @@ describe('evaluateAlerts', () => {
     }
   })
   it('closingSoon body shows closing time; none when >30 min left or closed', () => {
-    const a = evaluateAlerts(null, snap('2026-10-14T13:35', 'ok'), subs, [], new Set()).find((x) => x.key.startsWith('closingSoon:westNew'))
+    const a = evaluateAlerts(null, snap('2026-10-14T13:35', 'ok'), subs, [], new Set()).find((x) => x.key.startsWith('closingSoon:west:'))
     expect(a?.body).toBe('14:00에 배식이 끝나요')
     expect(evaluateAlerts(null, snap('2026-10-14T13:29', 'ok'), subs, [], new Set()).some((x) => x.kind === 'closingSoon')).toBe(false)
-    expect(evaluateAlerts(null, snap('2026-10-14T14:30', 'ok'), subs, [], new Set()).some((x) => x.key.startsWith('closingSoon:westNew'))).toBe(false)
+    expect(evaluateAlerts(null, snap('2026-10-14T14:30', 'ok'), subs, [], new Set()).some((x) => x.key.startsWith('closingSoon:west:'))).toBe(false)
   })
   it('sent round-trips and drops keys older than two days, keeps future ones', () => {
     saveSent(

@@ -1,3 +1,4 @@
+import { DINING_HALLS } from '@/data/restaurants'
 import type { DiningHallId } from '@/domain/types'
 import { storage } from '@/lib/storage'
 
@@ -41,8 +42,14 @@ export function toggleFavorite(name: string): void {
   emit()
 }
 
+/** 예전 값(westNew 등) 중 지금 식당이 아닌 것은 버린다. */
 export function getSubscriptions(): Subscriptions {
-  return { ...DEFAULT_SUBS, ...storage.get<Partial<Subscriptions>>('subscriptions', {}) }
+  const s = { ...DEFAULT_SUBS, ...storage.get<Partial<Subscriptions>>('subscriptions', {}) }
+  const halls: unknown[] = Array.isArray(s.queueCleared) ? s.queueCleared : []
+  return {
+    ...s,
+    queueCleared: halls.filter((h): h is DiningHallId => DINING_HALLS.includes(h as DiningHallId)),
+  }
 }
 
 export function setSubscriptions(s: Subscriptions): void {

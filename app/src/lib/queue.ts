@@ -30,7 +30,8 @@ const MODEL: Record<string, Model> = {
   'east.lunch': { peak: '12:10', sigma: 28, base: 18, service: 14 },
   'east.dinner': { peak: '18:10', sigma: 25, base: 10, service: 12 },
   'east.lateNight': { peak: '23:50', sigma: 15, base: 5, service: 10 },
-  'westNew.lunch': { peak: '12:00', sigma: 25, base: 11, service: 12 },
+  'west.lunch': { peak: '12:05', sigma: 25, base: 9, service: 7 },
+  'new.lunch': { peak: '12:00', sigma: 25, base: 6, service: 7 },
 }
 
 /** FNV-1a 32-bit string hash. */

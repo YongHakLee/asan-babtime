@@ -1,5 +1,5 @@
-import { VENUES } from '@/data/restaurants'
-import type { DiningHallId, MealKey, VenueId } from '@/domain/types'
+import { DINING_HALLS as HALLS, MENU_GROUPS, VENUES } from '@/data/restaurants'
+import type { DiningHallId, MealKey, MenuGroupId } from '@/domain/types'
 import { toast } from '@/components/ui/toast'
 import { getActiveMeal, getServiceStatus, seoulYmd } from '@/lib/hours'
 import { getCourses } from '@/lib/menu'
@@ -21,8 +21,7 @@ export interface AlertSnapshot {
   levels: Record<DiningHallId, CongestionLevel>
 }
 
-const HALLS: DiningHallId[] = ['east', 'westNew']
-const ALL_VENUES: VenueId[] = ['east', 'westNew', 'boxLunch']
+const GROUPS = Object.keys(MENU_GROUPS) as MenuGroupId[]
 const MEALS: MealKey[] = ['breakfast', 'lunch', 'dinner', 'lateNight', 'mobile']
 const MEAL_LABEL: Record<MealKey, string> = {
   breakfast: '조식',
@@ -54,12 +53,14 @@ function seoulDow(d: Date): number {
   return new Date(Date.UTC(y, m - 1, day)).getUTCDay()
 }
 
-function findFavorite(at: Date, favorites: string[]): { venue: VenueId; meal: MealKey; item: string } | null {
-  for (const venue of ALL_VENUES) {
+/** 메뉴 묶음마다 한 번만 찾는다(서관·신관은 같은 메뉴라 "서관·신관"으로 알린다). */
+function findFavorite(at: Date, favorites: string[]): { place: string; meal: MealKey; item: string } | null {
+  for (const group of GROUPS) {
+    const { label, venues } = MENU_GROUPS[group]
     for (const meal of MEALS) {
-      for (const course of getCourses(at, venue, meal)) {
+      for (const course of getCourses(at, venues[0], meal)) {
         for (const item of course.items) {
-          if (favorites.some((f) => item.name.includes(f))) return { venue, meal, item: item.name }
+          if (favorites.some((f) => item.name.includes(f))) return { place: label, meal, item: item.name }
         }
       }
     }
@@ -109,7 +110,7 @@ export function evaluateAlerts(
           key: `favoriteDay:${date}`,
           kind: 'favoriteDay',
           title: '즐겨찾는 메뉴가 나와요',
-          body: `오늘 ${VENUES[f.venue].label} ${MEAL_LABEL[f.meal]}: ${f.item}`,
+          body: `오늘 ${f.place} ${MEAL_LABEL[f.meal]}: ${f.item}`,
         })
       }
     }
@@ -121,7 +122,7 @@ export function evaluateAlerts(
           key: `favoriteDay:eve:${date}`,
           kind: 'favoriteDay',
           title: '즐겨찾는 메뉴가 나와요',
-          body: `내일 ${VENUES[f.venue].label} ${MEAL_LABEL[f.meal]}: ${f.item}`,
+          body: `내일 ${f.place} ${MEAL_LABEL[f.meal]}: ${f.item}`,
         })
       }
     }

@@ -11,7 +11,7 @@ import type { VenueId } from "@/domain/types"
 import { useClock } from "@/hooks/useClock"
 import { DAY_KIND_LABEL, dayKind } from "@/lib/hours"
 
-const VENUE_ORDER: VenueId[] = ["east", "westNew", "boxLunch"]
+const VENUE_ORDER: VenueId[] = ["east", "west", "new", "boxLunch"]
 
 /** 고른 식당의 건물·층·찾아가는 법 */
 function VenueDetails({ id }: { id: VenueId }) {

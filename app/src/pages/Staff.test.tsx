@@ -48,7 +48,17 @@ describe("Staff sold-out switches (R21)", () => {
     expect(isSoldOut("east", "lateNight", undefined, t("2026-10-14T23:40"))).toBe(true)
   })
 
-  it("westNew lists its lunch and the menu shows it sold out", async () => {
+  it("offers the three dining halls", () => {
+    renderAt("2026-10-14T12:20", <StaffPage />)
+    const group = screen.getByRole("group", { name: "식당" })
+    expect(
+      within(group)
+        .getAllByRole("button")
+        .map((b) => b.textContent)
+    ).toEqual(["동관", "서관", "신관"])
+  })
+
+  it("west lists its lunch and the shared menu names the sold-out hall", async () => {
     renderAt(
       "2026-10-14T12:20",
       <>
@@ -56,23 +66,30 @@ describe("Staff sold-out switches (R21)", () => {
         <MenuPage />
       </>
     )
-    await pickHall("서관·신관")
+    await pickHall("서관")
     expect(switchNames()).toEqual(["중식 품절"])
-    const west = screen.getByRole("region", { name: /^서관·신관/ })
-    expect(within(west).queryByText("품절")).toBeNull()
+    const shared = screen.getByRole("region", { name: /^서관·신관 공통/ })
+    expect(within(shared).queryByText(/품절/)).toBeNull()
     await userEvent.click(screen.getByRole("switch", { name: "중식 품절" }))
-    expect(within(west).getByText("품절")).toBeInTheDocument()
+    expect(isSoldOut("west", "lunch", undefined, t("2026-10-14T12:20"))).toBe(true)
+    expect(isSoldOut("new", "lunch", undefined, t("2026-10-14T12:20"))).toBe(false)
+    expect(within(shared).getByText("서관 품절")).toBeInTheDocument()
     expect(
-      within(screen.getByRole("region", { name: /^동관/ })).queryByText("품절")
+      within(screen.getByRole("region", { name: /^동관/ })).queryByText(/품절/)
     ).toBeNull()
+
+    // 신관도 품절이면 공통 열은 그냥 "품절"
+    await pickHall("신관")
+    await userEvent.click(screen.getByRole("switch", { name: "중식 품절" }))
+    expect(within(shared).getByText("품절")).toBeInTheDocument()
   })
 
-  it("westNew with nothing left today says so", async () => {
+  it("west with nothing left today says so", async () => {
     renderAt("2026-10-14T15:30", <StaffPage />)
-    await pickHall("서관·신관")
+    await pickHall("서관")
     expect(screen.queryAllByRole("switch")).toHaveLength(0)
     expect(
-      screen.getByText("오늘은 서관·신관에 남은 배식이 없어요")
+      screen.getByText("오늘은 서관에 남은 배식이 없어요")
     ).toBeInTheDocument()
   })
 })

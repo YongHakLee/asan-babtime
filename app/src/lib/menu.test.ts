@@ -6,11 +6,11 @@ import { MENU_WEEK_LABEL, dayPopularity, getCourses, getMenuForDate, summary } f
 describe('menu', () => {
   it('maps any Wednesday to the stored Wednesday', () => {
     expect(getCourses(t('2026-11-04T12:00'), 'east', 'lunch')[0].items[0].name).toBe('꽈리고추간장닭갈비')
-    expect(getCourses(t('2026-10-14T12:00'), 'westNew', 'lunch')[0].items[0].name).toBe('투움바파스타')
+    expect(getCourses(t('2026-10-14T12:00'), 'west', 'lunch')[0].items[0].name).toBe('투움바파스타')
   })
-  it('east lunch is more popular than westNew on Wednesday', () =>
+  it('east lunch is more popular than west/new on Wednesday', () =>
     expect(dayPopularity(t('2026-10-14T12:00'), 'east', 'lunch')).toBeGreaterThan(
-      dayPopularity(t('2026-10-14T12:00'), 'westNew', 'lunch'),
+      dayPopularity(t('2026-10-14T12:00'), 'west', 'lunch'),
     ))
   it('no box lunch on Sunday', () => expect(getCourses(t('2026-10-18T12:00'), 'boxLunch', 'lunch')).toEqual([]))
   it('takeout has three zones with picks 2,3,4', () =>
@@ -26,8 +26,8 @@ describe('menu', () => {
     // 2026-11-03T23:30Z is Wed 08:30 in Seoul
     expect(getMenuForDate(new Date('2026-11-03T23:30:00Z')).date).toBe('2026-10-14')
   })
-  it('weekend westNew lunch is the live corner; dinner may be one merged course', () => {
-    expect(getCourses(t('2026-10-17T12:00'), 'westNew', 'lunch')[0].label).toBe('라이브코너(서관)')
+  it('weekend west lunch is the live corner; dinner may be one merged course', () => {
+    expect(getCourses(t('2026-10-17T12:00'), 'west', 'lunch')[0].label).toBe('라이브코너(서관)')
     expect(getCourses(t('2026-10-14T18:00'), 'east', 'dinner')).toHaveLength(1)
     expect(getCourses(t('2026-10-12T18:00'), 'east', 'dinner').map((c) => c.label)).toEqual(['A', 'B'])
   })
@@ -42,5 +42,11 @@ describe('menu', () => {
       '2026-10-23',
     ])
     expect(BOX_LUNCH_NOTICE).toBe('AMIS3.0 도시락신청, 월 08:30 ~ 목 17:30, 하루 500개 한정')
+  })
+  it('west and new share the westNew menu', () => {
+    const at = t('2026-10-14T12:20')
+    expect(getCourses(at, 'new', 'lunch')).toEqual(getCourses(at, 'west', 'lunch'))
+    expect(getCourses(at, 'west', 'lunch')[0].items[0].name).toBe('투움바파스타')
+    expect(dayPopularity(at, 'new', 'lunch')).toBe(dayPopularity(at, 'west', 'lunch'))
   })
 })

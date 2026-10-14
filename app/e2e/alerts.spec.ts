@@ -7,8 +7,8 @@ test("alert switch rows are at least 44px tall and tappable", async ({
   await page.setViewportSize({ width: 360, height: 780 })
   await page.goto("/alerts")
   const switches = page.getByRole("switch")
-  expect(await switches.count()).toBe(5)
-  for (let i = 0; i < 5; i++) {
+  expect(await switches.count()).toBe(6)
+  for (let i = 0; i < 6; i++) {
     const row = switches.nth(i).locator("xpath=ancestor::label[1]")
     const box = await row.boundingBox()
     expect(box!.height).toBeGreaterThanOrEqual(44)

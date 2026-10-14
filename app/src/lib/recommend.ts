@@ -1,5 +1,5 @@
-import { VENUES } from '@/data/restaurants'
-import type { DiningHallId, MealKey } from '@/domain/types'
+import { DINING_HALLS as HALLS, VENUES } from '@/data/restaurants'
+import type { DiningHallId, MealKey, Venue } from '@/domain/types'
 import { getActiveMeal, getNextService, getServiceStatus } from '@/lib/hours'
 import { dayPopularity, getCourses, summary } from '@/lib/menu'
 import { getActiveOverride, overrideRemainingMs } from '@/lib/override'
@@ -7,7 +7,6 @@ import { simulateQueue } from '@/lib/queue'
 import { effectiveWait } from '@/lib/status'
 
 const MIN = 60_000
-const HALLS: DiningHallId[] = ['east', 'westNew']
 export const MEAL_LABEL: Record<MealKey, string> = {
   breakfast: '조식',
   lunch: '중식',
@@ -86,10 +85,10 @@ function clock(d: Date): string {
 }
 
 /** 서관·신관은 주말·공휴일에 쉰다(평일에만 중식 운영). */
-const isWestNewClosedToday = (at: Date) => getServiceStatus('westNew', 'lunch', at).kind === 'notToday'
+const isWestNewClosedToday = (at: Date) =>
+  (['west', 'new'] as const).every((h) => getServiceStatus(h, 'lunch', at).kind === 'notToday')
 
-type Tile = '동' | '서' | '신'
-const TILES: Record<DiningHallId, Tile[]> = { east: ['동'], westNew: ['서', '신'] }
+type Tile = Venue['short']
 
 export function homeHeadline(at: Date): { title: string; detail: string | null; tiles: Tile[] } {
   const open = HALLS.flatMap((hall) => {
@@ -122,13 +121,17 @@ export function homeHeadline(at: Date): { title: string; detail: string | null; 
       ? `지금은 ${name}이 바로 드실 수 있어요`
       : `지금은 ${name}이 가장 빨라요, 약 ${Math.round(best.wait)}분 기다려요`
 
+  // 나머지 중 기다림이 있고 곧 한산해질 식당들을 식당 순서대로 잇는다
+  const later = open.flatMap((o) => {
+    if (o.hall === best.hall || o.wait < 3) return []
+    const rec = recommendTime(o.hall, o.meal, at)
+    return rec && rec.getTime() > at.getTime() ? [`${VENUES[o.hall].label}은 ${koreanTime(rec)}`] : []
+  })
   let detail: string | null = null
-  const other = open.find((o) => o.hall !== best.hall && o.wait >= 3)
-  const rec = other ? recommendTime(other.hall, other.meal, at) : null
-  if (other && rec && rec.getTime() > at.getTime()) {
-    detail = `${VENUES[other.hall].label}은 ${koreanTime(rec)}부터 한산해질 것으로 보여요`
+  if (later.length > 0) {
+    detail = `${later.join(', ')}부터 한산해질 것으로 보여요`
   } else if (open.length === 1 && best.hall === 'east' && isWestNewClosedToday(at)) {
     detail = '주말과 공휴일에는 동관만 운영해요'
   }
-  return { title, detail, tiles: TILES[best.hall] }
+  return { title, detail, tiles: [VENUES[best.hall].short] }
 }

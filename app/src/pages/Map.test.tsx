@@ -8,14 +8,19 @@ import { renderAt } from "@/test/render"
 const user = userEvent.setup()
 
 describe("Map", () => {
-  it("selecting westNew pin shows estimated notice", async () => {
+  it("selecting west or new pin shows estimated notice and its directions", async () => {
     renderAt("2026-10-14T12:20", <MapPage />)
     await user.click(
-      screen.getByRole("button", { name: "서관·신관 직원식당 위치" })
+      screen.getByRole("button", { name: "서관 직원식당 위치" })
     )
     expect(
       screen.getByText("추정 위치예요. 현장 안내와 다를 수 있어요")
     ).toBeInTheDocument()
+    expect(screen.getByText("서관 지하 1층(추정)")).toBeInTheDocument()
+    await user.click(
+      screen.getByRole("button", { name: "신관 직원식당 위치" })
+    )
+    expect(screen.getByText("신관 지하 1층(추정)")).toBeInTheDocument()
   })
 
   it("hours table lists east lunch weekday and holiday hours", () => {
@@ -37,9 +42,12 @@ describe("Map", () => {
     expect(
       screen.getByRole("button", { name: "동관 직원식당 위치" })
     ).toHaveAttribute("aria-pressed", "true")
-    expect(
-      screen.getByRole("button", { name: "서관·신관 직원식당 위치" })
-    ).toHaveAttribute("aria-pressed", "false")
+    for (const name of ["서관 직원식당 위치", "신관 직원식당 위치"]) {
+      expect(screen.getByRole("button", { name })).toHaveAttribute(
+        "aria-pressed",
+        "false"
+      )
+    }
     expect(
       screen.getByText("동관 지하 1층, 보호자식당과 같은 공간")
     ).toBeInTheDocument()
@@ -62,11 +70,11 @@ describe("Map", () => {
 
   it("shows closed days and display notes", () => {
     renderAt("2026-10-14T12:20", <MapPage />)
-    const west = within(
-      screen.getByRole("table", { name: "서관·신관 직원식당 운영시간" })
-    )
-    expect(west.getAllByText("운영 안 함")).toHaveLength(2)
-    expect(west.getByText("주말·공휴일 운영하지 않음")).toBeInTheDocument()
+    for (const name of ["서관 직원식당 운영시간", "신관 직원식당 운영시간"]) {
+      const table = within(screen.getByRole("table", { name }))
+      expect(table.getAllByText("운영 안 함")).toHaveLength(2)
+      expect(table.getByText("주말·공휴일 운영하지 않음")).toBeInTheDocument()
+    }
     const east = within(
       screen.getByRole("table", { name: "동관 직원식당 운영시간" })
     )
@@ -79,7 +87,7 @@ describe("Map", () => {
     const east = screen.getByRole("table", { name: "동관 직원식당 운영시간" })
     const open = within(east).getByText("운영 중").closest("tr")!
     expect(within(open).getByRole("rowheader")).toHaveTextContent(/^중식/)
-    expect(screen.getAllByText("운영 중")).toHaveLength(3)
+    expect(screen.getAllByText("운영 중")).toHaveLength(4)
   })
 
   it("marks nothing between lunch and dinner", () => {
