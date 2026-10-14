@@ -6,6 +6,7 @@
 
 :root {
   --deep: #004f51;
+  --deep-foreground: #ffffff;
   --primary: #00696d;
   --primary-foreground: #ffffff;
   --background: #eef5f4;
@@ -31,6 +32,7 @@
 
 .dark {
   --deep: #06393a;
+  --deep-foreground: #ffffff;
   --primary: #5cc3bc;
   --primary-foreground: #05302f;
   --background: #071d1d;

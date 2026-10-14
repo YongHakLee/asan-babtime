@@ -1,12 +1,28 @@
-import { Button } from "@/components/ui/button"
+import { BrowserRouter, Route, Routes } from "react-router"
+
+import { AppShell } from "@/components/layout/AppShell"
+import { ClockProvider } from "@/providers/clock"
+import AlertsPage from "@/pages/Alerts"
+import HomePage from "@/pages/Home"
+import MapPage from "@/pages/Map"
+import MenuPage from "@/pages/Menu"
+import StaffPage from "@/pages/Staff"
 
 export function App() {
   return (
-    <div className="flex min-h-svh flex-col gap-4 bg-deep p-6 text-primary-foreground">
-      <h1 className="text-xl font-semibold">아산 밥때</h1>
-      <p>서울아산병원 직원식당 혼잡도와 메뉴를 한눈에 봐요.</p>
-      <Button className="self-start">시작하기</Button>
-    </div>
+    <ClockProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route index element={<HomePage />} />
+            <Route path="menu" element={<MenuPage />} />
+            <Route path="map" element={<MapPage />} />
+            <Route path="alerts" element={<AlertsPage />} />
+            <Route path="staff" element={<StaffPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ClockProvider>
   )
 }
 

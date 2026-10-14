@@ -38,6 +38,7 @@
 
   /* shadcn 슬롯이 없는 토큰 (design/tokens.css) */
   --color-deep: var(--deep);
+  --color-deep-foreground: var(--deep-foreground);
   --color-brand-orange: var(--brand-orange);
   --color-status-ok: var(--status-ok);
   --color-status-mid: var(--status-mid);
