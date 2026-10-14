@@ -112,13 +112,19 @@ export function homeHeadline(
   const fast = from ? fastestHall(at, from) : null
   if (fast) {
     const v = VENUES[fast.hall]
-    const arrival =
-      fast.waitOnArrival < 2 ? '바로 드실 수 있어요' : `약 ${Math.round(fast.waitOnArrival)}분 기다려요`
-    return {
-      title: `지금 출발하면 ${v.label}이 가장 빨라요`,
-      detail: `걸어서 ${fast.walk}분, 도착하면 ${arrival}`,
-      tiles: [v.short],
+    const untilOpen = Math.round(fast.untilOpen)
+    let detail: string
+    if (untilOpen > 0) {
+      // 도착한 뒤에 배식을 시작한다: 시작 시각과 남은 시간을 말하고, 시작 직후 줄이 있으면 덧붙인다
+      const queue = Math.round(fast.queueWait)
+      detail = `걸어서 ${fast.walk}분, ${clock(fast.ready)} 배식 시작까지 ${untilOpen}분`
+      if (fast.queueWait >= 2) detail += ` (시작 직후 약 ${queue}분 대기)`
+    } else {
+      const arrival =
+        fast.waitOnArrival < 2 ? '바로 드실 수 있어요' : `약 ${Math.round(fast.waitOnArrival)}분 기다려요`
+      detail = `걸어서 ${fast.walk}분, 도착하면 ${arrival}`
     }
+    return { title: `지금 출발하면 ${v.label}이 가장 빨라요`, detail, tiles: [v.short] }
   }
 
   const open = HALLS.flatMap((hall) => {

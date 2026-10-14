@@ -33,6 +33,21 @@ describe('walk', () => {
     expect(east).toMatchObject({ hall: 'east', walk: 2, waitOnArrival: 3, total: 5 })
     expect(east.ready).toEqual(t('2026-10-14T11:00'))
     expect(east.arriveAt).toEqual(t('2026-10-14T10:57'))
+    expect(east).toMatchObject({ untilOpen: 3, queueWait: 0 })
+  })
+
+  it('a hall already serving on arrival has untilOpen 0 and queueWait = waitOnArrival', () => {
+    const o = fastestHall(t('2026-10-14T12:00'), 'east')!
+    expect(o.untilOpen).toBe(0)
+    expect(o.queueWait).toBe(o.waitOnArrival)
+  })
+
+  it('ties on the displayed (rounded) total, then shorter walk: Wed 10:55:xx from 신관 picks 신관', () => {
+    // 신관(2분, 개시까지 ~2.4분)과 서관(4분, 개시까지 ~0.4분)은 총 소요가 같다: 덜 걷는 신관
+    for (const sec of [0, 7, 19, 37, 41, 53, 59]) {
+      const at = new Date(t('2026-10-14T10:55').getTime() + sec * 1000)
+      expect(fastestHall(at, 'new'), `10:55:${sec}`).toMatchObject({ hall: 'new', walk: 2 })
+    }
   })
 
   it('Wed 10:55 from 서관 picks 서관, from 신관 picks 신관', () => {
@@ -58,7 +73,7 @@ describe('walk', () => {
       expect(o.arriveAt.getTime()).toBe(at.getTime() + o.walk * 60_000)
       expect(o.total).toBeCloseTo(o.walk + o.waitOnArrival)
     }
-    const totals = opts.map((o) => o.total)
+    const totals = opts.map((o) => Math.round(o.total))
     expect(totals).toEqual([...totals].sort((a, b) => a - b))
   })
 

@@ -129,12 +129,29 @@ describe('headline with a work building', () => {
       detail: '다음 배식은 석식 17:30부터예요',
       tiles: [],
     }))
-  it('just before opening counts the wait until it opens (Wed 10:55 from 동관)', () =>
-    expect(homeHeadline(t('2026-10-14T10:55'), 'east')).toMatchObject({
-      title: '지금 출발하면 동관이 가장 빨라요',
-      detail: '걸어서 2분, 도착하면 약 3분 기다려요',
-      tiles: ['동'],
+  it('just before opening says when serving starts (Wed 10:55 from 동관)', () => {
+    const h = homeHeadline(t('2026-10-14T10:55'), 'east')
+    expect(h).toMatchObject({ title: '지금 출발하면 동관이 가장 빨라요', tiles: ['동'] })
+    expect(h.detail).toMatch(/^걸어서 2분, 11:00 배식 시작까지 3분/)
+  })
+  it('opens well after arrival: counts minutes until opening (Wed 10:31 from 서관)', () =>
+    expect(homeHeadline(t('2026-10-14T10:31'), 'west')).toMatchObject({
+      title: '지금 출발하면 서관이 가장 빨라요',
+      detail: '걸어서 2분, 11:00 배식 시작까지 27분',
     }))
+  it('dinner opening (Wed 17:05 from 동관)', () =>
+    expect(homeHeadline(t('2026-10-14T17:05'), 'east').detail).toMatch(/^걸어서 2분, 17:30 배식 시작까지 23분/))
+  it('adds the expected wait right after opening when it is 2 minutes or more', () => {
+    // 개시 직후 대기는 직원 입력 '줄 있음'(최소 5분)으로 만든다. 세 식당 모두 표시해 동관이 그대로 가장 빠르게
+    const at = t('2026-10-14T10:55')
+    for (const hall of ['east', 'west', 'new'] as const) setOverride(hall, 'queue', at)
+    const m = Math.round(effectiveWait('east', 'lunch', t('2026-10-14T11:00')).waitMinutes)
+    expect(m).toBeGreaterThanOrEqual(2)
+    expect(homeHeadline(at, 'east')).toMatchObject({
+      title: '지금 출발하면 동관이 가장 빨라요',
+      detail: `걸어서 2분, 11:00 배식 시작까지 3분 (시작 직후 약 ${m}분 대기)`,
+    })
+  })
   it('the same moment without a work building still recommends the open hall', () =>
     expect(homeHeadline(t('2026-10-14T14:55')).title).toMatch(/^지금은 동관이/))
   it('a nearby building still reaches east before closing at 14:55', () =>

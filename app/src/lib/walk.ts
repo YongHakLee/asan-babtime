@@ -14,7 +14,11 @@ export interface HallOption {
   arriveAt: Date
   /** 줄을 서기 시작하는 시각. 배식 중이면 도착 시각, 곧 시작하면 배식 시작 시각 */
   ready: Date
-  /** 도착한 뒤 먹기까지의 기다림(분): 배식 시작까지 남은 시간 + 그때의 예상 대기 */
+  /** 도착해서 배식 시작까지 남은 시간(분). 도착 때 이미 배식 중이면 0 */
+  untilOpen: number
+  /** 줄을 서기 시작할 때(ready)의 예상 대기(분). 곧 시작하면 배식 시작 직후의 대기 */
+  queueWait: number
+  /** 도착한 뒤 먹기까지의 기다림(분): untilOpen + queueWait */
   waitOnArrival: number
   total: number
 }
@@ -39,7 +43,7 @@ function servingOnArrival(hall: DiningHallId, arriveAt: Date): { meal: MealKey; 
  * 지금 출발했을 때 식당별 총 소요(도보 + 도착 뒤 기다림).
  * 도착 시각에 배식 중이거나 30분 안에 배식을 시작하는 식당만 넣는다. 곧 시작하면
  * 시작까지 남은 시간에 시작 시각의 예상 대기를 더한다.
- * 총 소요가 짧은 순, 같으면 덜 걷는 순, 그래도 같으면 동관→서관→신관.
+ * 총 소요(분, 반올림)가 짧은 순, 같으면 덜 걷는 순, 그래도 같으면 동관→서관→신관.
  */
 export function hallOptions(at: Date, from: BuildingId): HallOption[] {
   const opts = DINING_HALLS.flatMap((hall) => {
@@ -49,11 +53,13 @@ export function hallOptions(at: Date, from: BuildingId): HallOption[] {
     if (!serving) return []
     const { meal, ready } = serving
     const untilOpen = (ready.getTime() - arriveAt.getTime()) / MIN
-    const waitOnArrival = untilOpen + effectiveWait(hall, meal, ready).waitMinutes
-    return [{ hall, walk, arriveAt, ready, waitOnArrival, total: walk + waitOnArrival }]
+    const queueWait = effectiveWait(hall, meal, ready).waitMinutes
+    const waitOnArrival = untilOpen + queueWait
+    return [{ hall, walk, arriveAt, ready, untilOpen, queueWait, waitOnArrival, total: walk + waitOnArrival }]
   })
-  // 총 소요가 같으면 덜 걷는 쪽. 그래도 같으면 안정 정렬이라 식당 순서를 지킨다
-  return opts.sort((a, b) => a.total - b.total || a.walk - b.walk)
+  // 화면에 보이는 분 단위(반올림)로 비교한다: 초 단위 차이로 순위가 흔들리지 않게.
+  // 같으면 덜 걷는 쪽, 그래도 같으면 안정 정렬이라 식당 순서를 지킨다
+  return opts.sort((a, b) => Math.round(a.total) - Math.round(b.total) || a.walk - b.walk)
 }
 
 export function fastestHall(at: Date, from: BuildingId): HallOption | null {
