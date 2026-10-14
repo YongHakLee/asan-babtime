@@ -17,6 +17,8 @@ describe('recommend', () => {
   })
   it('15:30 shows next service', () =>
     expect(homeHeadline(t('2026-10-14T15:30')).title).toBe('다음 배식은 석식 17:30부터예요'))
+  it('out-of-hours detail names the next meal before its dishes', () =>
+    expect(homeHeadline(t('2026-10-14T15:30')).detail).toMatch(/^석식 메뉴: .+/))
   it('03:00 shows breakfast', () =>
     expect(homeHeadline(t('2026-10-15T03:00')).title).toBe('다음 배식은 조식 06:00부터예요'))
   it('Saturday lunch mentions east only', () =>

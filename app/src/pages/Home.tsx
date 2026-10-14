@@ -224,7 +224,7 @@ export default function HomePage() {
     <main className="@container flex flex-1 flex-col lg:flex-row lg:bg-deep">
       <section
         aria-labelledby="home-title"
-        className="bg-deep px-4 pt-4 pb-[2.125rem] text-deep-foreground lg:w-[42%] lg:shrink-0 lg:pt-12 lg:pr-12 lg:pl-[max(1rem,calc((100cqw_-_64rem)/2_+_1rem))]"
+        className="bg-deep px-4 pt-4 pb-[2.125rem] text-deep-foreground lg:w-[42%] lg:shrink-0 lg:pt-12 lg:pr-12 lg:pl-[max(1rem,calc((100cqw_-_64rem)/2))]"
       >
         <div className="lg:sticky lg:top-12">
           <div className="flex gap-1.5">
@@ -253,7 +253,7 @@ export default function HomePage() {
 
       <section
         aria-label="식당별 상황"
-        className="relative -mt-[18px] flex flex-1 flex-col rounded-t-3xl bg-card px-4 pt-4 pb-6 lg:mt-0 lg:rounded-tr-none lg:pt-10 lg:pr-[max(1rem,calc((100cqw_-_64rem)/2_+_1rem))] lg:pl-12"
+        className="relative -mt-[18px] flex flex-1 flex-col rounded-t-3xl bg-card px-4 pt-4 pb-6 lg:mt-0 lg:rounded-tr-none lg:pt-10 lg:pr-[max(1rem,calc((100cqw_-_64rem)/2))] lg:pl-12"
       >
         {strip && <ServiceStrip meal={strip.meal} status={strip.status} />}
         <ul className="mt-1.5 flex flex-col">

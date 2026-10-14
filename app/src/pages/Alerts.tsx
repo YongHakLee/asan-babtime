@@ -188,7 +188,7 @@ function StarPicker({
             className={
               value !== null && n <= value
                 ? "size-7 fill-primary text-primary"
-                : "size-7 text-muted-foreground/60"
+                : "size-7 text-muted-foreground/75"
             }
           />
         </ToggleGroupItem>

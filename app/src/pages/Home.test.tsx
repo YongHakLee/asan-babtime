@@ -41,6 +41,7 @@ describe("Home", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "다음 배식은 석식 17:30부터예요"
     )
+    expect(screen.getByText(/^석식 메뉴: /)).toBeInTheDocument()
     const east = screen.getByRole("listitem", { name: "동관 직원식당" })
     const west = screen.getByRole("listitem", { name: "서관·신관 직원식당" })
     const box = screen.getByRole("listitem", { name: "간편식 도시락" })

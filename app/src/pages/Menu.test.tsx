@@ -45,6 +45,7 @@ describe("Menu", () => {
     const row = screen.getByRole("listitem", { name: "꽈리고추간장닭갈비" })
     const heart = within(row).getByRole("button", { name: "즐겨찾기" })
     expect(heart).toHaveAttribute("aria-pressed", "false")
+    expect(heart).toHaveAccessibleDescription("꽈리고추간장닭갈비")
     await userEvent.click(heart)
     expect(heart).toHaveAttribute("aria-pressed", "true")
     expect(getFavorites()).toContain("꽈리고추간장닭갈비")

@@ -17,6 +17,7 @@ import type { DiningHallId } from "@/domain/types"
 import { useClock } from "@/hooks/useClock"
 import { formatMinutes, seoulMinutes } from "@/lib/format"
 import { seoulYmd } from "@/lib/hours"
+import { cn } from "@/lib/utils"
 import { getCourses } from "@/lib/menu"
 import {
   getActiveOverride,
@@ -83,14 +84,20 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
               variant="outline"
               aria-pressed={pressed}
               onClick={() => setOverride(hall, b.kind, now)}
-              className={`relative h-28 flex-col gap-1 rounded-3xl border-2 px-2 py-3 ${b.pressed}`}
+              className={cn(
+                "relative h-28 flex-col gap-1 rounded-3xl border-2 px-2 py-3",
+                b.pressed
+              )}
             >
               {pressed && (
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   aria-hidden
                   strokeWidth={2}
-                  className={`absolute top-2.5 right-2.5 size-5 ${DOT[b.kind]}`}
+                  className={cn(
+                    "absolute top-2.5 right-2.5 size-5",
+                    DOT[b.kind]
+                  )}
                 />
               )}
               <span className="text-2xl leading-tight font-bold tracking-tight">
@@ -206,28 +213,30 @@ export default function StaffPage() {
       </section>
 
       <div className="relative -mt-[18px] flex flex-1 flex-col rounded-t-3xl bg-card px-4 pt-5 pb-8">
-        <div className="mx-auto flex w-full max-w-xl flex-col gap-8">
-          <ToggleGroup
-            aria-label="식당"
-            value={[hall]}
-            onValueChange={(v) => {
-              if (v[0] !== undefined) setHall(v[0] as DiningHallId)
-            }}
-            spacing={1.5}
-            className="grid w-full grid-cols-2"
-          >
-            {HALLS.map((h) => (
-              <ToggleGroupItem
-                key={h}
-                value={h}
-                className="h-12 border border-border text-[0.9375rem] aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold aria-pressed:text-primary"
-              >
-                {VENUES[h].label}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-          <EntranceInput hall={hall} />
-          <SoldOutSection hall={hall} />
+        <div className="mx-auto w-full max-w-5xl">
+          <div className="flex max-w-xl flex-col gap-8">
+            <ToggleGroup
+              aria-label="식당"
+              value={[hall]}
+              onValueChange={(v) => {
+                if (v[0] !== undefined) setHall(v[0] as DiningHallId)
+              }}
+              spacing={1.5}
+              className="grid w-full grid-cols-2"
+            >
+              {HALLS.map((h) => (
+                <ToggleGroupItem
+                  key={h}
+                  value={h}
+                  className="h-12 border border-border text-[0.9375rem] aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold aria-pressed:text-primary"
+                >
+                  {VENUES[h].label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+            <EntranceInput hall={hall} />
+            <SoldOutSection hall={hall} />
+          </div>
         </div>
       </div>
     </main>

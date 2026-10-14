@@ -77,7 +77,7 @@
   --input: var(--border);
   --ring: var(--primary);
   --chart-1: var(--primary);
-  --chart-2: var(--brand-orange);
+  --chart-2: var(--deep);
   --chart-3: var(--status-ok);
   --chart-4: var(--status-queue);
   --chart-5: var(--muted-foreground);
@@ -96,5 +96,15 @@
     font-family: "Wanted Sans Variable", var(--font-sans);
     font-feature-settings: "tnum";
     word-break: keep-all;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }

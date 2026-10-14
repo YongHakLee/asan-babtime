@@ -106,7 +106,8 @@ export function homeHeadline(at: Date): { title: string; detail: string | null; 
     nexts.sort((a, b) => a.opensAt.getTime() - b.opensAt.getTime())
     const next = nexts[0]
     if (!next) return { title: '오늘은 배식 정보가 없어요', detail: null, tiles: ['동'] }
-    const detail = summary(getCourses(next.opensAt, 'east', next.meal)) || null
+    const dishes = summary(getCourses(next.opensAt, 'east', next.meal))
+    const detail = dishes ? `${MEAL_LABEL[next.meal]} 메뉴: ${dishes}` : null
     return {
       title: `다음 배식은 ${MEAL_LABEL[next.meal]} ${clock(next.opensAt)}부터예요`,
       detail,

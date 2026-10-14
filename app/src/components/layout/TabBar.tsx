@@ -18,7 +18,7 @@ export function TabBar() {
               end={to === "/"}
               className={({ isActive }) =>
                 cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-1 text-xs",
+                  "flex min-h-14 flex-col items-center justify-center gap-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
                   isActive
                     ? "font-semibold text-primary"
                     : "text-muted-foreground"

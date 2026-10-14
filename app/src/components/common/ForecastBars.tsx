@@ -19,8 +19,10 @@ const MIN_SCALE_MINUTES = 5
 const hm = (d: Date) => formatMinutes(seoulMinutes(d))
 
 /**
- * 10분 칸 예상 대기 막대(한 계열 스파크라인). 지난 칸은 primary,
- * 지금 칸은 brand-orange, 이후 칸은 옅은 primary. 값은 막대마다 툴팁과
+ * 10분 칸 예상 대기 막대(한 계열 스파크라인). 지난 칸은 꽉 찬 primary,
+ * 지금 칸은 brand-orange, 이후 칸(예측)은 primary 테두리에 옅은 채움.
+ * 테두리가 카드 대비 3:1을 넘어 막대 모양이 보이고, 채움 차이로 지난 칸과
+ * 구분된다. 값은 막대마다 툴팁과
  * 화면 낭독용 목록으로 함께 제공해 색이나 마우스에 기대지 않는다.
  */
 export function ForecastBars({ points }: { points: ForecastPoint[] }) {
@@ -44,10 +46,10 @@ export function ForecastBars({ points }: { points: ForecastPoint[] }) {
                     ? "bg-brand-orange"
                     : nowIdx === -1 || i < nowIdx
                       ? "bg-primary"
-                      : "bg-primary/25"
+                      : "border border-b-0 border-primary bg-primary/15"
                 )}
                 style={{
-                  height: `max(2px, ${Math.round((p.waitMinutes / scale) * 100)}%)`,
+                  height: `max(3px, ${Math.round((p.waitMinutes / scale) * 100)}%)`,
                 }}
               />
             </TooltipTrigger>

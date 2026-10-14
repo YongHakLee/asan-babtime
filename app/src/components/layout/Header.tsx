@@ -29,8 +29,8 @@ export function Header() {
   const [demoOpen, setDemoOpen] = useState(false)
 
   return (
-    <header className="bg-deep text-deep-foreground">
-      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+    <header className="bg-deep px-4 text-deep-foreground">
+      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 py-3">
         <p className="text-base font-semibold">아산 밥때</p>
 
         <nav aria-label="주요 메뉴" className="hidden md:block">
@@ -42,7 +42,7 @@ export function Header() {
                   end={to === "/"}
                   className={({ isActive }) =>
                     cn(
-                      "flex h-11 items-center rounded-4xl px-4 text-sm",
+                      "flex h-11 items-center rounded-4xl px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-deep-foreground",
                       isActive
                         ? "bg-deep-foreground/15 font-semibold"
                         : "opacity-80 hover:opacity-100"
@@ -64,7 +64,7 @@ export function Header() {
         <div className="flex basis-full items-center justify-between gap-2 md:basis-auto">
           <Button
             variant="ghost"
-            className="h-11 px-4 hover:bg-deep-foreground/15 hover:text-deep-foreground"
+            className="h-11 px-4 hover:bg-deep-foreground/15 hover:text-deep-foreground focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-deep-foreground"
             onClick={() => setDemoOpen(true)}
           >
             <HugeiconsIcon icon={Timer02Icon} data-icon="inline-start" />
@@ -82,7 +82,7 @@ export function Header() {
               <ToggleGroupItem
                 key={value}
                 value={value}
-                className="h-11 min-w-11 text-deep-foreground hover:bg-deep-foreground/15 hover:text-deep-foreground aria-pressed:bg-deep-foreground/25"
+                className="h-11 min-w-11 text-deep-foreground hover:bg-deep-foreground/15 hover:text-deep-foreground focus-visible:ring-2 focus-visible:ring-deep-foreground aria-pressed:bg-deep-foreground/25"
               >
                 <HugeiconsIcon icon={icon} strokeWidth={2} />
                 <span className="sr-only">{label}</span>

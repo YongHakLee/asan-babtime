@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { useId, type ReactNode } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { FavouriteIcon } from "@hugeicons/core-free-icons"
 
@@ -47,6 +47,7 @@ export function MenuItemRow({
 }) {
   const { favorites, toggleFavorite } = usePrefs()
   const on = favorites.includes(item.name)
+  const nameId = useId()
 
   return (
     <li
@@ -58,6 +59,7 @@ export function MenuItemRow({
     >
       <div className={cn("min-w-0", main && "pt-2.5")}>
         <p
+          id={nameId}
           className={cn(
             "leading-snug wrap-break-word",
             main
@@ -71,12 +73,12 @@ export function MenuItemRow({
       </div>
       <Toggle
         aria-label="즐겨찾기"
+        aria-describedby={nameId}
         pressed={on}
         onPressedChange={() => toggleFavorite(item.name)}
         className={cn(
-          "-mr-3.5 size-11 min-w-11 shrink-0 px-0 text-muted-foreground/60 hover:bg-transparent hover:text-primary aria-pressed:bg-transparent aria-pressed:text-primary [&_svg]:transition-colors aria-pressed:[&_svg]:fill-current motion-reduce:[&_svg]:transition-none",
-          !main &&
-            "text-muted-foreground/45 [&_svg:not([class*='size-'])]:size-[0.9375rem]"
+          "-mr-3.5 size-11 min-w-11 shrink-0 px-0 text-muted-foreground/75 hover:bg-transparent hover:text-primary aria-pressed:bg-transparent aria-pressed:text-primary [&_svg]:transition-colors aria-pressed:[&_svg]:fill-current motion-reduce:[&_svg]:transition-none",
+          !main && "[&_svg:not([class*='size-'])]:size-[0.9375rem]"
         )}
       >
         <HugeiconsIcon icon={FavouriteIcon} strokeWidth={1.8} />

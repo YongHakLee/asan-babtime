@@ -1,21 +1,5 @@
-# React + TypeScript + Vite + shadcn/ui
-
-This is a template for a new Vite project with React, TypeScript, and shadcn/ui.
-
-## Adding components
-
-To add components to your app, run the following command:
-
-```bash
-npx shadcn@latest add button
-```
-
-This will place the ui components in the `src/components` directory.
-
-## Using components
-
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button"
-```
+# 아산 밥때 — 서울아산병원 직원식당의 메뉴와 예상 대기를 보여 주는 시연용 웹앱(모의 데이터)
+- 설치: `npm install`
+- 개발 서버: `npm run dev`
+- 테스트: `npm test`(단위), `npm run e2e`(Playwright, 390px·1280px)
+- 시연: `/?at=2026-10-14T12:20`처럼 `at`으로 시각을 고정하고, 다른 탭에서 `/staff`를 열어 줄 상태를 바꾸면 화면이 함께 바뀌어요
