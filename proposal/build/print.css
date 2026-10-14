@@ -4,7 +4,7 @@
   size: A4;
   margin: 20mm 18mm 22mm;
   @top-left {
-    content: "아산 밥때 상세 제안서";
+    content: "밥타임 상세 제안서";
     font-family: "Wanted Sans Variable", sans-serif;
     font-size: 9pt;
     color: var(--muted-foreground);

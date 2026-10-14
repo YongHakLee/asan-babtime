@@ -9,10 +9,11 @@ const opt = (n, d) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] :
 const fixture = flag('--fixture');
 const mdPath = opt('--input', 'proposal/상세제안서.md');
 const pdfPath = opt('--pdf', 'proposal/상세제안서.pdf');
-const HEADER = '아산 밥때 상세 제안서';
+const HEADER = '밥타임 상세 제안서';
 const FORBIDDEN = ['웹앱', '구현 프로그램', '프로토타입', '시연', '데모', 'Vercel', 'shadcn', 'React', '모의 데이터'];
 
 const fails = [];
+let hasAppendix = false; // md에 "## 부록" 제목이 있는지
 const fail = (m) => fails.push(m);
 
 // ---- md ----
@@ -29,6 +30,7 @@ else {
     for (let n = 1; n <= 9; n++) if (!new RegExp(`^## ${n}\\.`, 'm').test(body)) fail(`장 제목 "## ${n}." 없음`);
   }
   if (!/^## 참고문헌\s*$/m.test(body)) fail('"## 참고문헌" 제목 없음');
+  hasAppendix = /^## 부록/m.test(body);
 }
 
 // ---- pdf ----
@@ -39,9 +41,11 @@ else {
   const doc = await pdfjs.getDocument({ data }).promise;
   const n = doc.numPages;
   if (fixture) { if (n < 2) fail(`쪽수 ${n} (fixture는 2쪽 이상)`); }
-  else if (n < 12 || n > 15) fail(`쪽수 ${n} (12~15 필요)`);
+  else if (n < 12 || n > 16) fail(`쪽수 ${n} (12~16 필요)`);
 
   let refPos = null; // 참고문헌 제목 위치
+  let refPage = null; // 참고문헌 시작 쪽
+  let appxPage = null; // 부록 시작 쪽
   let fnPos = null;  // 첫 각주 출처 줄 위치(「접근일」 포함 줄)
   for (let p = 1; p <= n; p++) {
     const page = await doc.getPage(p);
@@ -61,7 +65,8 @@ else {
     });
     for (const l of [...lines].sort((a, b) => b.y - a.y)) {
       const pos = p * 10000 - l.y;
-      if (l.text === '참고문헌' && refPos === null) refPos = pos;
+      if (l.text === '참고문헌' && refPos === null) { refPos = pos; refPage = p; }
+      if (hasAppendix && refPos !== null && appxPage === null && l.text.startsWith('부록') && l.text.length <= 40) appxPage = p;
       if (l.text.includes('접근일') && fnPos === null) fnPos = pos;
     }
     if (p === 1) {
@@ -75,6 +80,11 @@ else {
   if (refPos === null) fail('PDF에 "참고문헌" 제목 줄 없음');
   else if (fnPos === null) fail('PDF에 각주 출처 줄(접근일) 없음');
   else if (fnPos < refPos) fail('각주 영역이 "참고문헌" 제목보다 앞에 있음 (P-R1)');
+  if (!fixture && refPage !== null && refPage > 15) fail(`"참고문헌" 시작 쪽 ${refPage} (본문은 15쪽 이내)`);
+  if (hasAppendix) {
+    if (appxPage === null) fail('md에 "## 부록"이 있으나 PDF에서 부록 제목 줄을 찾지 못함');
+    else if (!fixture && appxPage > 16) fail(`"부록" 시작 쪽 ${appxPage} (16쪽 이내 필요)`);
+  }
   if (n >= 2) {
     const page = await doc.getPage(2);
     await page.getOperatorList();
@@ -92,7 +102,7 @@ else {
     if (!real.some((r) => r.includes('WantedSans'))) fail(`2쪽 글꼴에 WantedSans 없음 (확인된 글꼴: ${real.join(', ') || '없음'})`);
     else console.log(`2쪽 글꼴: ${[...new Set(real.map((r) => r.replace(/^[A-Z]+\+/, '')))].join(', ')}`);
   }
-  console.log(`쪽수: ${n}`);
+  console.log(`쪽수: ${n}${refPage ? `, 참고문헌 시작 ${refPage}쪽` : ''}${appxPage ? `, 부록 시작 ${appxPage}쪽` : ''}`);
 }
 
 if (fails.length) {
