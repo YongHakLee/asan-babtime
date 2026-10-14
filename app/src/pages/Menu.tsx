@@ -202,7 +202,7 @@ export default function MenuPage() {
                 <TabsTrigger
                   key={t.value}
                   value={t.value}
-                  className="h-full flex-none px-0 text-[0.9375rem] text-deep-foreground/65 after:bg-deep-foreground hover:text-deep-foreground focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-deep-foreground focus-visible:outline-none data-active:font-semibold data-active:text-deep-foreground"
+                  className="h-full flex-none px-0 text-[0.9375rem] text-deep-muted after:bg-deep-foreground hover:text-deep-foreground focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-deep-foreground focus-visible:outline-none data-active:font-semibold data-active:text-deep-foreground"
                 >
                   {t.label}
                 </TabsTrigger>
