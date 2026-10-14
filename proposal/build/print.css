@@ -1,0 +1,133 @@
+/* 제안서 인쇄 스타일. 색은 design/tokens.css의 :root 토큰만 사용한다. */
+
+@page {
+  size: A4;
+  margin: 20mm 18mm 22mm;
+  @top-left {
+    content: "아산 밥때 상세 제안서";
+    font-family: "Wanted Sans Variable", sans-serif;
+    font-size: 9pt;
+    color: var(--muted-foreground);
+  }
+  @bottom-right {
+    content: counter(page);
+    font-family: "Wanted Sans Variable", sans-serif;
+    font-size: 9pt;
+    color: var(--muted-foreground);
+  }
+}
+@page :first {
+  margin: 0;
+  @top-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  margin: 0;
+  font-family: "Wanted Sans Variable", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.75;
+  color: var(--foreground);
+  background: var(--card);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* 표지 */
+.cover {
+  width: 210mm;
+  height: 297mm;
+  padding: 0 24mm;
+  background: var(--deep);
+  color: var(--deep-foreground);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  break-after: page;
+  overflow: hidden;
+}
+.cover-inner { margin-top: 82mm; }
+.cover-contest { margin: 0 0 18mm; font-size: 11pt; font-weight: 400; letter-spacing: 0.02em; opacity: 0.85; }
+.cover-title { margin: 0; font-size: 46pt; font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; }
+.cover-subtitle { margin: 6mm 0 0; font-size: 18pt; font-weight: 400; line-height: 1.4; }
+.cover-rule { width: 28mm; height: 1.2mm; margin-top: 16mm; background: var(--brand-orange); }
+.cover-foot { margin-bottom: 24mm; font-size: 11pt; line-height: 1.6; }
+.cover-foot p { margin: 0; }
+.cover-date { opacity: 0.85; }
+
+/* 본문 */
+.doc { max-width: 100%; }
+h2, h3, h4 { color: var(--deep); break-after: avoid; }
+h2 {
+  margin: 0 0 7mm;
+  padding-bottom: 3mm;
+  font-size: 20pt;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  border-bottom: 1.5px solid var(--deep);
+  break-before: page;
+}
+.doc > h2:first-child { break-before: auto; }
+h3 { margin: 9mm 0 3mm; font-size: 13.5pt; font-weight: 700; line-height: 1.45; }
+h4 { margin: 6mm 0 2mm; font-size: 11.5pt; font-weight: 700; color: var(--primary); }
+p { margin: 0 0 3.5mm; }
+ul, ol { margin: 0 0 4mm; padding-left: 5.5mm; }
+li { margin-bottom: 1.2mm; }
+li::marker { color: var(--primary); }
+strong { font-weight: 700; color: var(--deep); }
+a { color: var(--primary); text-decoration: none; overflow-wrap: anywhere; }
+sup a { font-size: 8pt; }
+
+/* 표 */
+table { width: 100%; margin: 5mm 0 6mm; border-collapse: collapse; font-size: 9.5pt; line-height: 1.55; }
+thead { display: table-header-group; }
+tr, figure { break-inside: avoid; }
+th, td { padding: 2.2mm 3mm; text-align: left; vertical-align: top; border-bottom: 0.5pt solid var(--border); }
+thead th { background: var(--accent); color: var(--deep); font-weight: 700; border-bottom: 1pt solid var(--deep); }
+
+/* 인용·강조 상자 */
+blockquote {
+  margin: 5mm 0 6mm;
+  padding: 4mm 5mm;
+  background: var(--background);
+  border-left: 3px solid var(--primary);
+  break-inside: avoid;
+}
+blockquote p:last-child { margin-bottom: 0; }
+
+figure { margin: 5mm 0; }
+figure svg, img { max-width: 100%; height: auto; }
+figcaption { margin-top: 2mm; font-size: 9pt; color: var(--muted-foreground); }
+
+/* 표 캡션: 표 바로 위 한 줄, 그림 캡션(figcaption)은 그림 아래 */
+p.table-caption {
+  margin: 6mm 0 0;
+  font-size: 9pt;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  break-after: avoid;
+}
+p.table-caption + table { margin-top: 2mm; }
+/* 표 주석: 표 바로 아래 한 줄 */
+p.table-note { margin: -4mm 0 4mm; font-size: 9pt; line-height: 1.6; color: var(--muted-foreground); }
+
+/* 각주 */
+hr.footnotes-sep { display: none; }
+section.footnotes {
+  margin-top: 6mm;
+  padding-top: 3mm;
+  border-top: 0.5pt solid var(--border);
+  font-size: 8.5pt;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+section.footnotes a { color: inherit; }
+section.footnotes ol { margin: 0; padding-left: 7mm; }
+section.footnotes li { margin-bottom: 1.2mm; }
+section.footnotes li::marker { color: var(--muted-foreground); }
+section.footnotes p { margin: 0; display: inline; }
+.footnote-backref { display: none; }
+h2 + section.footnotes { margin-top: 0; padding-top: 0; border-top: none; }

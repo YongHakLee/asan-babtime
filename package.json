@@ -1,0 +1,17 @@
+{
+  "name": "asan-babttae-proposal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "proposal:html": "node proposal/build/build.mjs --input proposal/상세제안서.md --out proposal/build/out/상세제안서.html",
+    "proposal:pdf": "node proposal/build/build.mjs --input proposal/상세제안서.md --out proposal/build/out/상세제안서.html --pdf proposal/상세제안서.pdf",
+    "proposal:verify": "node proposal/build/verify.mjs"
+  },
+  "devDependencies": {
+    "markdown-it": "15.0.2",
+    "markdown-it-footnote": "4.0.0",
+    "pdfjs-dist": "4.10.38",
+    "playwright": "1.64.0",
+    "wanted-sans": "1.0.3"
+  }
+}
