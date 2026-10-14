@@ -22,7 +22,7 @@ import { getCourses } from "@/lib/menu"
 import {
   getActiveOverride,
   isSoldOut,
-  OVERRIDE_TTL_MS,
+  overrideRemainingMs,
   setOverride,
   setSoldOut,
   subscribeOverrides,
@@ -64,10 +64,9 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
   const [, bump] = useReducer((n: number) => n + 1, 0)
   useEffect(() => subscribeOverrides(bump), [])
 
-  const active = getActiveOverride(hall, now)
-  const left = active
-    ? Math.ceil((active.at + OVERRIDE_TTL_MS - now.getTime()) / 60_000)
-    : 0
+  // now는 시계가 흐를 때 다시 그리기 위한 값이다. 남은 시간은 실제 시계로 잰다
+  const active = getActiveOverride(hall)
+  const left = active ? Math.ceil(overrideRemainingMs(active) / 60_000) : 0
 
   return (
     <section aria-labelledby="entrance-title" className="flex flex-col gap-3">

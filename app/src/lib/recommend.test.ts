@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getServiceStatus } from '@/lib/hours'
 import { setOverride } from '@/lib/override'
@@ -36,8 +36,21 @@ describe('recommend', () => {
     const h = homeHeadline(at)
     expect(h.title).toBe('지금은 서관·신관이 바로 드실 수 있어요')
     const r = recommendTime('east', 'lunch', at)!
-    expect(r.getTime()).toBeGreaterThanOrEqual(at.getTime() + 15 * 60_000)
+    expect(r.getTime()).toBeGreaterThanOrEqual(at.getTime() + 15 * 60_000 - 1000)
     expect(h.detail).toMatch(/^동관은 .+부터 한산해질 것으로 보여요$/)
+  })
+  it('override expiry in demo terms uses the real time left (at + TTL - real elapsed)', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(new Date('2026-10-20T01:00:00Z'))
+      setOverride('east', 'queue', t('2026-10-14T13:20'))
+      vi.setSystemTime(new Date('2026-10-20T01:05:00Z'))
+      // 실제로 5분 지났으니 10분 남았다. 모델은 13:15부터 한산하지만 13:30 전에는 권하지 않는다
+      const at = t('2026-10-14T13:20')
+      expect(recommendTime('east', 'lunch', at)!.getTime()).toBe(t('2026-10-14T13:30').getTime())
+    } finally {
+      vi.useRealTimers()
+    }
   })
   it('clear override on east: east wins the tie, no clearing detail', () => {
     const at = t('2026-10-14T12:20')

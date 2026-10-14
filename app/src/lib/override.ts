@@ -7,8 +7,10 @@ export type OverrideKind = 'queue' | 'clear'
 export interface Override {
   hall: DiningHallId
   kind: OverrideKind
-  /** epoch ms */
+  /** 입력한 순간의 화면 시각(시연 시각일 수 있음), epoch ms. "HH:MM에 입력" 표기에만 쓴다. */
   at: number
+  /** 입력한 순간의 실제 시각(Date.now()), epoch ms. 유효 시간(15분)은 이것으로 잰다. */
+  realAt: number
 }
 
 export interface SoldOut {
@@ -42,14 +44,23 @@ function broadcast() {
 
 export function setOverride(hall: DiningHallId, kind: OverrideKind, at: Date): void {
   const map = storage.get<OverrideMap>(OVERRIDE_KEY, {})
-  storage.set(OVERRIDE_KEY, { ...map, [hall]: { hall, kind, at: at.getTime() } })
+  storage.set(OVERRIDE_KEY, { ...map, [hall]: { hall, kind, at: at.getTime(), realAt: Date.now() } })
   broadcast()
 }
 
-export function getActiveOverride(hall: DiningHallId, at: Date): Override | null {
+/** 남은 유효 시간(ms). 실제 시계 기준이라 탭마다 시연 시각이 달라도 같다. */
+export function overrideRemainingMs(o: Override): number {
+  return OVERRIDE_TTL_MS - (Date.now() - o.realAt)
+}
+
+/**
+ * 지금 유효한 직원 입력. 유효 여부는 실제 시계로만 판단한다(0 ≤ 경과 < 15분).
+ * 시연 시각은 탭마다 다를 수 있어 쓰지 않는다.
+ */
+export function getActiveOverride(hall: DiningHallId): Override | null {
   const o = storage.get<OverrideMap>(OVERRIDE_KEY, {})[hall]
-  if (!o) return null
-  const age = at.getTime() - o.at
+  if (!o || typeof o.realAt !== 'number') return null
+  const age = Date.now() - o.realAt
   return age >= 0 && age < OVERRIDE_TTL_MS ? o : null
 }
 

@@ -1,13 +1,35 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { t } from '@/test/time'
-import { getActiveOverride, isSoldOut, setOverride, setSoldOut, subscribeOverrides } from '@/lib/override'
+import {
+  getActiveOverride,
+  isSoldOut,
+  overrideRemainingMs,
+  setOverride,
+  setSoldOut,
+  subscribeOverrides,
+} from '@/lib/override'
 
 describe('overrides', () => {
-  it('override expires after 15 minutes', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('override expires after 15 real minutes, whatever the demo clock says', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-20T01:00:00Z'))
     setOverride('east', 'queue', t('2026-10-14T12:00'))
-    expect(getActiveOverride('east', t('2026-10-14T12:14'))?.kind).toBe('queue')
-    expect(getActiveOverride('east', t('2026-10-14T12:15'))).toBeNull()
+    const o = getActiveOverride('east')
+    expect(o?.kind).toBe('queue')
+    expect(o?.at).toBe(t('2026-10-14T12:00').getTime())
+    expect(o?.realAt).toBe(Date.now())
+    vi.setSystemTime(new Date('2026-10-20T01:14:59Z'))
+    expect(getActiveOverride('east')?.kind).toBe('queue')
+    expect(overrideRemainingMs(getActiveOverride('east')!)).toBe(1000)
+    vi.setSystemTime(new Date('2026-10-20T01:15:00Z'))
+    expect(getActiveOverride('east')).toBeNull()
+  })
+  it('an override stored without realAt (old format) is inactive', () => {
+    localStorage.setItem('babttae.overrides', JSON.stringify({ east: { hall: 'east', kind: 'queue', at: Date.now() } }))
+    expect(getActiveOverride('east')).toBeNull()
   })
   it('sold out is per date', () => {
     setSoldOut({ hall: 'east', meal: 'dinner', course: 'B', date: '2026-10-14' }, true)

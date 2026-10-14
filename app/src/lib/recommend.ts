@@ -2,12 +2,11 @@ import { VENUES } from '@/data/restaurants'
 import type { DiningHallId, MealKey } from '@/domain/types'
 import { getActiveMeal, getNextService, getServiceStatus } from '@/lib/hours'
 import { dayPopularity, getCourses, summary } from '@/lib/menu'
-import { getActiveOverride } from '@/lib/override'
+import { getActiveOverride, overrideRemainingMs } from '@/lib/override'
 import { simulateQueue } from '@/lib/queue'
 import { effectiveWait } from '@/lib/status'
 
 const MIN = 60_000
-const OVERRIDE_TTL_MS = 15 * MIN // override.ts의 TTL과 같다
 const HALLS: DiningHallId[] = ['east', 'westNew']
 export const MEAL_LABEL: Record<MealKey, string> = {
   breakfast: '조식',
@@ -53,10 +52,11 @@ export function forecast(
 export function recommendTime(hall: DiningHallId, meal: MealKey, at: Date): Date | null {
   const w = windowOf(hall, meal, at)
   if (!w) return null
-  const o = getActiveOverride(hall, at)
+  const o = getActiveOverride(hall)
   if (o?.kind === 'clear') return at
-  // 직원이 '줄 있음'으로 표시했으면 그 표시가 만료되기 전에는 한산하다고 하지 않는다
-  const earliest = o?.kind === 'queue' ? o.at + OVERRIDE_TTL_MS : 0
+  // 직원이 '줄 있음'으로 표시했으면 그 표시가 만료되기 전에는 한산하다고 하지 않는다.
+  // 유효 시간은 실제 시계로 재므로, 시연 시각으로는 at + (TTL - 실제 경과)에 끝난다.
+  const earliest = o?.kind === 'queue' ? at.getTime() + overrideRemainingMs(o) : 0
   for (let ms = Math.max(at.getTime(), w.start.getTime(), earliest); ms < w.end.getTime(); ms += 5 * MIN) {
     if (waitAt(hall, meal, w.start, new Date(ms)) < 3) return new Date(ms)
   }

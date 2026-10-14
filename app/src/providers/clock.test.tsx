@@ -79,27 +79,32 @@ describe("ClockProvider ?at= query", () => {
     return v
   }
 
-  it("tabs opened at different real times share one demo time", () => {
+  it("every load of ?at= starts exactly at the given time", () => {
     setSearch("?at=2026-10-14T12:20")
     vi.useFakeTimers({ toFake: ["Date"] })
     vi.setSystemTime(new Date("2026-10-14T03:00:00Z"))
     const first = nowAfterMount()
-    vi.setSystemTime(new Date("2026-10-14T03:00:30Z"))
+    vi.setSystemTime(new Date("2026-10-14T03:30:00Z"))
     const second = nowAfterMount()
-    expect(first).toBe(new Date("2026-10-14T12:20:00+09:00").getTime())
-    expect(second - first).toBe(30_000)
+    const at = new Date("2026-10-14T12:20:00+09:00").getTime()
+    expect(first).toBe(at)
+    expect(second).toBe(at)
   })
 
-  it("resets the anchor when stale (over 6 h) or when at differs", () => {
+  it("ignores a stored demo anchor left by an older build", () => {
     setSearch("?at=2026-10-14T12:20")
     vi.useFakeTimers({ toFake: ["Date"] })
-    vi.setSystemTime(new Date("2026-10-14T03:00:00Z"))
-    nowAfterMount()
-    vi.setSystemTime(new Date("2026-10-14T09:30:00Z"))
-    expect(nowAfterMount()).toBe(new Date("2026-10-14T12:20:00+09:00").getTime())
-    setSearch("?at=2026-10-14T18:00")
-    vi.setSystemTime(new Date("2026-10-14T09:31:00Z"))
-    expect(nowAfterMount()).toBe(new Date("2026-10-14T18:00:00+09:00").getTime())
+    vi.setSystemTime(new Date("2026-10-14T03:30:00Z"))
+    localStorage.setItem(
+      "babttae.demoAnchor",
+      JSON.stringify({
+        at: "2026-10-14T12:20",
+        realStart: new Date("2026-10-14T03:00:00Z").getTime(),
+      })
+    )
+    expect(nowAfterMount()).toBe(
+      new Date("2026-10-14T12:20:00+09:00").getTime()
+    )
   })
 
   it("starts in demo at the Seoul time given by ?at=", () => {

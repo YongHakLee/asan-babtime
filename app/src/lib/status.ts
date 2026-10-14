@@ -10,7 +10,7 @@ export function effectiveWait(
   at: Date,
 ): { waitMinutes: number; level: CongestionLevel; source: 'model' | 'staff' } {
   const sim = simulateQueue(hall, meal, at, dayPopularity(at, hall, meal))
-  const o = getActiveOverride(hall, at)
+  const o = getActiveOverride(hall)
   if (o?.kind === 'queue') return { waitMinutes: Math.max(sim.waitMinutes, 5), level: 'queue', source: 'staff' }
   if (o?.kind === 'clear') return { waitMinutes: 0, level: 'ok', source: 'staff' }
   return { waitMinutes: sim.waitMinutes, level: sim.level, source: 'model' }
