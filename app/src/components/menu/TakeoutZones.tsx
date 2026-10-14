@@ -1,5 +1,4 @@
-import { BuildingTile } from "@/components/common/BuildingTile"
-import { TAKEOUT_HOURS, VENUES } from "@/data/restaurants"
+import { TakeoutHours } from "@/components/common/TakeoutHours"
 import type { TakeoutZone, ZoneId } from "@/domain/types"
 import { getMenuForDate } from "@/lib/menu"
 import { cn } from "@/lib/utils"
@@ -66,32 +65,7 @@ export function TakeoutZones({ date }: { date: Date }) {
           <Zone key={z.zone} zone={z} />
         ))}
       </div>
-      <section
-        aria-labelledby="takeout-hours"
-        className="rounded-2xl bg-accent px-4 py-3.5"
-      >
-        <h3 id="takeout-hours" className="text-[0.8125rem] font-semibold">
-          테이크아웃 운영시간
-        </h3>
-        <dl className="mt-2.5 flex flex-col gap-2 text-[0.8125rem]">
-          {(["east", "westNew"] as const).map((hall) => (
-            <div key={hall} className="flex items-start gap-2.5">
-              <dt className="flex w-24 shrink-0 items-center gap-2 font-medium">
-                <BuildingTile
-                  glyph={VENUES[hall].short}
-                  className="size-5 rounded-[5px] text-[0.6875rem]"
-                />
-                {VENUES[hall].label}
-              </dt>
-              <dd className="flex flex-col text-muted-foreground tabular-nums">
-                {TAKEOUT_HOURS[hall].split(", ").map((line) => (
-                  <span key={line}>{line}</span>
-                ))}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
+      <TakeoutHours />
     </div>
   )
 }

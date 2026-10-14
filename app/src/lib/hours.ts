@@ -28,6 +28,13 @@ function kindOfYmd(ymd: string): DayKind {
   return 'weekday'
 }
 
+/** 운영시간표 열 이름 */
+export const DAY_KIND_LABEL: Record<DayKind, string> = {
+  weekday: '평일',
+  saturday: '토요일',
+  sundayOrHoliday: '일·공휴일',
+}
+
 export function dayKind(d: Date): DayKind {
   return kindOfYmd(seoulYmd(d))
 }

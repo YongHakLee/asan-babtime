@@ -32,7 +32,7 @@ export const VENUES: Record<VenueId, Venue> = {
     floor: 'B1F',
     location: 'estimated',
     directions: '동관 B1F 직원식당 앞',
-    map: { x: 260, y: 140 },
+    map: { x: 246, y: 160 },
   },
 }
 
