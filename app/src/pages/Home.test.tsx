@@ -139,6 +139,7 @@ describe("Home", () => {
 
   it("opens the east detail sheet from its row with pattern and map link", async () => {
     const user = userEvent.setup()
+    localStorage.setItem("babttae.workBuilding", '"west"')
     renderAt("2026-10-14T12:20", <Home />)
     const east = screen.getByRole("listitem", { name: "동관 직원식당" })
     await user.click(within(east).getByRole("button", { name: "동관 직원식당" }))
@@ -172,6 +173,9 @@ describe("Home", () => {
       "href",
       "/map?venue=east"
     )
+    // 남아 있는 근무 건물 값이 있어도 도보 문구가 시트에 없다
+    for (const word of [/걸어서/, /근무 건물/, /도보/])
+      expect(within(sheet).queryByText(word)).toBeNull()
     expect(within(sheet).getByText(/모의 데이터/)).toBeInTheDocument()
   })
 
