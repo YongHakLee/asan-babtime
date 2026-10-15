@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react"
+import { useEffect, useReducer, useRef, useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
 
@@ -93,24 +93,41 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
   useEffect(() => subscribeOverrides(bump), [])
   // 스크린리더에 읽어 줄 마지막 문구. key가 바뀌면 새 글자 노드가 되어 다시 읽는다.
   // 만료로 풀릴 때는 바꾸지 않아 읽지 않는다. 식당을 바꾸면 key로 다시 만들어 지워진다
-  const [announce, setAnnounce] = useState<{ key: string; text: string } | null>(
-    null
-  )
+  const [announce, setAnnounce] = useState<{
+    key: string
+    text: string
+    entryId?: string
+  } | null>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
 
   // now는 시계가 흐를 때 다시 그리기 위한 값이다. 남은 시간은 실제 시계로 잰다
   const active = getActiveEntry(hall)
   const left = active ? Math.ceil(entryRemainingMs(active) / 60_000) : 0
 
+  // 선택 안내는 그 선택이 아직 켜져 있을 때만 남긴다(만료나 다른 탭의 교체·취소면 조용히 지운다)
+  const shownAnnounce =
+    announce && (!announce.entryId || active?.id === announce.entryId)
+      ? announce
+      : null
+
   return (
     <section aria-labelledby="entrance-title" className="flex flex-col gap-3">
-      <h2 id="entrance-title" className="text-lg font-bold tracking-tight">
+      <h2
+        id="entrance-title"
+        ref={titleRef}
+        tabIndex={-1}
+        className="text-lg font-bold tracking-tight outline-none"
+      >
         입구 상황
       </h2>
-      {!active && (
-        <p className="text-sm text-muted-foreground">
-          지금 입구 상황을 골라 주세요
-        </p>
-      )}
+      {/* 선택하면 버튼이 밀리지 않게 줄 높이를 그대로 둔다 */}
+      <p
+        data-testid="entrance-prompt"
+        aria-hidden={active ? true : undefined}
+        className={cn("text-sm text-muted-foreground", active && "invisible")}
+      >
+        지금 입구 상황을 골라 주세요
+      </p>
       <div className="grid grid-cols-2 gap-3">
         {BUTTONS.map((b) => {
           const pressed = active?.level === b.level
@@ -122,7 +139,11 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
               aria-pressed={pressed}
               onClick={() => {
                 const entry = addStaffEntry(hall, b.level, now)
-                setAnnounce({ key: entry.id, text: `${b.label} 선택됨` })
+                setAnnounce({
+                  key: entry.id,
+                  text: `${b.label} 선택됨`,
+                  entryId: entry.id,
+                })
               }}
               className={cn(
                 "relative h-24 flex-col gap-1 rounded-3xl border-2 px-2 py-3",
@@ -152,7 +173,9 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
       </div>
       {/* 선택하거나 취소할 때만 읽어 준다. 매분 바뀌는 남은 시간은 라이브 영역 밖에 둔다 */}
       <p role="status" className="sr-only">
-        {announce && <span key={announce.key}>{announce.text}</span>}
+        {shownAnnounce && (
+          <span key={shownAnnounce.key}>{shownAnnounce.text}</span>
+        )}
       </p>
       {active && (
         <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
@@ -169,6 +192,7 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
             onClick={() => {
               cancelStaffEntry(active.id)
               setAnnounce({ key: `cancel-${active.id}`, text: "선택 취소됨" })
+              titleRef.current?.focus()
             }}
           >
             선택 취소
