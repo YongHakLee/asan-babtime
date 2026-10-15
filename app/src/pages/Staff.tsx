@@ -13,6 +13,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { DINING_HALLS as HALLS, VENUES } from "@/data/restaurants"
+import { waitText } from "@/components/common/StatusText"
 import type { DiningHallId, MealKey } from "@/domain/types"
 import { useClock } from "@/hooks/useClock"
 import { formatMinutes, seoulMinutes } from "@/lib/format"
@@ -26,71 +27,113 @@ import { cn } from "@/lib/utils"
 import { getCourses } from "@/lib/menu"
 import {
   addStaffEntry,
+  cancelStaffEntry,
   entryRemainingMs,
   getActiveEntry,
   isSoldOut,
   setSoldOut,
   subscribeOverrides,
 } from "@/lib/override"
-import { LEVEL_LABEL } from "@/lib/queue"
+import { LEVEL_LABEL, type CongestionLevel } from "@/lib/queue"
 import { MEAL_LABEL } from "@/lib/recommend"
 
-type ButtonKind = "queue" | "clear"
-
 const BUTTONS: {
-  kind: ButtonKind
+  level: CongestionLevel
   label: string
   hint: string
   pressed: string
 }[] = [
   {
-    kind: "queue",
+    level: "ok",
+    label: "여유",
+    hint: "2분 미만",
+    pressed:
+      "aria-pressed:border-status-ok aria-pressed:bg-status-ok/15 aria-pressed:hover:bg-status-ok/20",
+  },
+  {
+    level: "mid",
+    label: "보통",
+    hint: "2–5분",
+    pressed:
+      "aria-pressed:border-status-mid aria-pressed:bg-status-mid/15 aria-pressed:hover:bg-status-mid/20",
+  },
+  {
+    level: "queue",
     label: "줄 있음",
-    hint: "입구에 줄이 서 있어요",
+    hint: "5–10분",
     pressed:
       "aria-pressed:border-status-queue aria-pressed:bg-status-queue/15 aria-pressed:hover:bg-status-queue/20",
   },
   {
-    kind: "clear",
-    label: "여유",
-    hint: "바로 들어갈 수 있어요",
+    level: "busy",
+    label: "혼잡",
+    hint: "10분 이상",
     pressed:
-      "aria-pressed:border-status-ok aria-pressed:bg-status-ok/15 aria-pressed:hover:bg-status-ok/20",
+      "aria-pressed:border-status-busy aria-pressed:bg-status-busy/15 aria-pressed:hover:bg-status-busy/20",
   },
 ]
 
-const DOT: Record<ButtonKind, string> = {
+const DOT: Record<CongestionLevel, string> = {
+  ok: "text-status-ok",
+  mid: "text-status-mid",
   queue: "text-status-queue",
-  clear: "text-status-ok",
+  busy: "text-status-busy",
+}
+
+const PARTICLE: Record<CongestionLevel, string> = {
+  ok: "로",
+  mid: "으로",
+  queue: "으로",
+  busy: "으로",
 }
 
 function EntranceInput({ hall }: { hall: DiningHallId }) {
   const { now } = useClock()
   const [, bump] = useReducer((n: number) => n + 1, 0)
   useEffect(() => subscribeOverrides(bump), [])
+  // 방금 취소한 식당. 식당을 바꾸면 key로 다시 만들어 지워지고,  새로 입력해도 지운다
+  const [cancelledHall, setCancelledHall] = useState<DiningHallId | null>(null)
 
   // now는 시계가 흐를 때 다시 그리기 위한 값이다. 남은 시간은 실제 시계로 잰다
   const active = getActiveEntry(hall)
   const left = active ? Math.ceil(entryRemainingMs(active) / 60_000) : 0
+  const justCancelled = !active && cancelledHall === hall
 
   return (
     <section aria-labelledby="entrance-title" className="flex flex-col gap-3">
-      <h2 id="entrance-title" className="text-lg font-bold tracking-tight">
-        입구 상황
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 id="entrance-title" className="text-lg font-bold tracking-tight">
+          입구 상황
+        </h2>
+        {active && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              cancelStaffEntry(active.id)
+              setCancelledHall(hall)
+            }}
+          >
+            입력 취소
+          </Button>
+        )}
+      </div>
       <div className="grid grid-cols-2 gap-3">
         {BUTTONS.map((b) => {
-          const level = b.kind === "queue" ? "queue" : "ok"
-          const pressed = active?.level === level
+          const pressed = active?.level === b.level
           return (
             <Button
-              key={b.kind}
+              key={b.level}
               type="button"
               variant="outline"
               aria-pressed={pressed}
-              onClick={() => addStaffEntry(hall, level, now)}
+              onClick={() => {
+                setCancelledHall(null)
+                addStaffEntry(hall, b.level, now)
+              }}
               className={cn(
-                "relative h-28 flex-col gap-1 rounded-3xl border-2 px-2 py-3",
+                "relative h-24 flex-col gap-1 rounded-3xl border-2 px-2 py-3",
                 b.pressed
               )}
             >
@@ -101,7 +144,7 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
                   strokeWidth={2}
                   className={cn(
                     "absolute top-2.5 right-2.5 size-5",
-                    DOT[b.kind]
+                    DOT[b.level]
                   )}
                 />
               )}
@@ -117,13 +160,28 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
       </div>
       {/* 입력하거나 풀릴 때만 읽어 준다. 매분 바뀌는 남은 시간은 라이브 영역 밖에 둔다 */}
       <p role="status" className="sr-only">
-        {active ? `${LEVEL_LABEL[active.level]} 입력됨` : ""}
-      </p>
-      <p className="text-sm text-muted-foreground">
         {active
-          ? `${formatMinutes(seoulMinutes(new Date(active.at)))}에 입력, ${left}분 남음`
-          : "지금은 예측값을 보여주고 있어요"}
+          ? `${LEVEL_LABEL[active.level]} 입력됨`
+          : justCancelled
+            ? "입력 취소됨"
+            : ""}
       </p>
+      {active ? (
+        <>
+          <p className="text-sm text-muted-foreground">
+            {`${formatMinutes(seoulMinutes(new Date(active.at)))}에 입력, ${left}분 남음`}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {`모델${active.model.level === active.level ? "도" : "은"} ${LEVEL_LABEL[active.model.level]}(${waitText(active.model.waitMinutes)})${PARTICLE[active.model.level]} 봤어요`}
+          </p>
+        </>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          {justCancelled
+            ? "입력을 취소했어요. 지금은 예측값을 보여주고 있어요"
+            : "지금은 예측값을 보여주고 있어요"}
+        </p>
+      )}
     </section>
   )
 }
@@ -264,7 +322,7 @@ export default function StaffPage() {
                 </ToggleGroupItem>
               ))}
             </ToggleGroup>
-            <EntranceInput hall={hall} />
+            <EntranceInput key={hall} hall={hall} />
             <SoldOutSection hall={hall} />
           </div>
         </div>

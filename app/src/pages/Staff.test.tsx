@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { createClock } from "@/lib/clock"
-import { isSoldOut } from "@/lib/override"
+import { getActiveEntry, isSoldOut } from "@/lib/override"
 import MenuPage from "@/pages/Menu"
 import StaffPage from "@/pages/Staff"
 import { renderAt } from "@/test/render"
@@ -138,5 +138,81 @@ describe("Staff", () => {
     expect(
       screen.getByText("지금은 예측값을 보여주고 있어요")
     ).toBeInTheDocument()
+  })
+})
+
+describe("Staff entrance input", () => {
+  const entrance = () => screen.getByRole("region", { name: "입구 상황" })
+  const btn = (name: string) =>
+    within(entrance()).getByRole("button", { name: new RegExp(`^${name}`) })
+
+  it("shows four level buttons with wait ranges", () => {
+    renderAt("2026-10-14T12:20", <StaffPage />)
+    const labels = within(entrance())
+      .getAllByRole("button")
+      .filter((b) => b.hasAttribute("aria-pressed"))
+      .map((b) => b.textContent)
+    expect(labels).toEqual([
+      "여유2분 미만",
+      "보통2–5분",
+      "줄 있음5–10분",
+      "혼잡10분 이상",
+    ])
+  })
+
+  it("hides the model before input", () => {
+    renderAt("2026-10-14T12:20", <StaffPage />)
+    expect(
+      screen.getByText("지금은 예측값을 보여주고 있어요")
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/모델/)).toBeNull()
+  })
+
+  it("after input shows the stored model with a neutral sentence", async () => {
+    renderAt("2026-10-14T12:20", <StaffPage />)
+    await userEvent.click(btn("혼잡"))
+    expect(btn("혼잡")).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByText(/12:20에 입력, 15분 남음/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/^모델도 혼잡\(약 \d+분\)으로 봤어요$/)
+    ).toBeInTheDocument()
+    expect(within(entrance()).getByRole("status")).toHaveTextContent(
+      "혼잡 입력됨"
+    )
+  })
+
+  it("different level says 모델은", async () => {
+    renderAt("2026-10-14T12:20", <StaffPage />)
+    await userEvent.click(btn("여유"))
+    expect(
+      screen.getByText(/^모델은 혼잡\(약 \d+분\)으로 봤어요$/)
+    ).toBeInTheDocument()
+  })
+
+  it("uses 로 after 여유", async () => {
+    renderAt("2026-10-14T15:30", <StaffPage />)
+    await pickHall("서관")
+    await userEvent.click(btn("혼잡"))
+    expect(
+      screen.getByText("모델은 여유(대기 없음)로 봤어요")
+    ).toBeInTheDocument()
+  })
+
+  it("cancel returns to the model", async () => {
+    renderAt("2026-10-14T12:20", <StaffPage />)
+    await userEvent.click(btn("혼잡"))
+    await userEvent.click(screen.getByRole("button", { name: "입력 취소" }))
+    for (const b of within(entrance()).getAllByRole("button")) {
+      expect(b).not.toHaveAttribute("aria-pressed", "true")
+    }
+    expect(
+      screen.getByText("입력을 취소했어요. 지금은 예측값을 보여주고 있어요")
+    ).toBeInTheDocument()
+    expect(within(entrance()).getByRole("status")).toHaveTextContent(
+      "입력 취소됨"
+    )
+    expect(getActiveEntry("east")).toBeNull()
+    await pickHall("서관")
+    expect(screen.queryByText(/입력을 취소했어요/)).toBeNull()
   })
 })

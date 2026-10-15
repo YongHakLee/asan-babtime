@@ -76,6 +76,25 @@ test("home set by the demo sheet reflects staff input from a new tab", async ({
   ).toContainText("여유", { timeout: 3000 })
 })
 
+test("busy input shows busy on home and cancel restores the model", async ({
+  context,
+}) => {
+  const home = await context.newPage()
+  const staff = await context.newPage()
+  await home.goto(`/?at=${AT}`)
+  await staff.goto(`/staff?at=${AT}`)
+  const row = home.getByRole("listitem", { name: "동관 직원식당" })
+  await staff.getByRole("button", { name: "줄 있음" }).click()
+  await expect(row).toContainText("줄 있음", { timeout: 3000 })
+  await staff.getByRole("button", { name: "혼잡" }).click()
+  await expect(row).toContainText("혼잡", { timeout: 3000 })
+  await staff.getByRole("button", { name: "입력 취소" }).click()
+  await expect(staff.getByText(/입력을 취소했어요/)).toBeVisible()
+  // 12:20 동관은 모델이 '혼잡'으로 본다
+  await expect(row).toContainText("혼잡", { timeout: 3000 })
+  await expect(row).not.toContainText("줄 있음")
+})
+
 test("reopening ?at= starts at the given time again", async ({ page }) => {
   await page.goto(`/?at=${AT}`)
   await expect(page.getByRole("banner")).toContainText("수요일 12:20")
@@ -95,7 +114,7 @@ test("reopening ?at= starts at the given time again", async ({ page }) => {
 
 test("big buttons are at least 96px tall", async ({ page }) => {
   await page.goto(`/staff?at=${AT}`)
-  for (const name of ["줄 있음", "여유"]) {
+  for (const name of ["여유", "보통", "줄 있음", "혼잡"]) {
     const box = await page.getByRole("button", { name }).boundingBox()
     expect(box!.height).toBeGreaterThanOrEqual(96)
   }
