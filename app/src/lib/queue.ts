@@ -35,7 +35,7 @@ const MODEL: Record<string, Model> = {
 }
 
 /** FNV-1a 32-bit string hash. */
-function fnv1a(s: string): number {
+export function fnv1a(s: string): number {
   let h = 0x811c9dc5
   for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i)
@@ -113,4 +113,9 @@ export function arrivalsSeries(
     out.push({ time: new Date(from), arrivals: Math.round(sum) })
   }
   return out
+}
+
+/** 그 식당·끼니의 모델 피크 시각 "HH:MM". 모델이 없으면 null. */
+export function peakOf(hall: DiningHallId, meal: MealKey): string | null {
+  return MODEL[`${hall}.${meal}`]?.peak ?? null
 }
