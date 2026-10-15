@@ -6,7 +6,7 @@
 | 항목 | 상태 |
 |---|---|
 | 브랜치 | `master` 하나(작업 브랜치·worktree 모두 정리됨), 원격 저장소 없음 |
-| 웹앱 | `app/` — 배포된 것은 v2 https://asan-babtime.vercel.app (Vercel 프로젝트 `asan-babtime`). v3(검수 직원 4단계 입력, 예측 점검 화면)는 미배포이며 사용자 확인 후 배포 |
+| 웹앱 | `app/` — v3 배포됨 https://asan-babtime.vercel.app (Vercel 프로젝트 `asan-babtime`, 2026-10-15 10:14 배포). v3 = 검수 직원 4단계 입력, 입력 누락 표시, 예측 점검 화면 |
 | 제안서 | `proposal/상세제안서.md` → `proposal/상세제안서.pdf` (16쪽: 본문 15 + 부록 A) |
 | 검증 | 단위 280, E2E 52 통과(8 건너뜀: 화면별 spec이 모바일 또는 데스크톱 프로젝트 한쪽에서만 도는 테스트) / 제안서 verify PASS |
 | 서비스 이름 | 「밥타임」(임시 — 최종 미정) |
