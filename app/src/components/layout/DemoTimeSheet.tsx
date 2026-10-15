@@ -13,6 +13,7 @@ import {
 import { Slider } from "@/components/ui/slider"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useClock } from "@/hooks/useClock"
+import { keepAt } from "@/lib/demoLink"
 import { formatMinutes, seoulMinutes, seoulWeekdayIndex } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -42,15 +43,6 @@ export function DemoTimeSheet({
       </SheetContent>
     </Sheet>
   )
-}
-
-/** 주소에 ?at=이 있으면 그대로 붙여 검수 직원·운영자 화면으로 간다. */
-function keepAt(path: string, search: string): string {
-  const at = new URLSearchParams(search).get("at")
-  // 시각의 ':'은 그대로 두어 주소를 읽기 쉽게 한다
-  return at
-    ? `${path}?at=${encodeURIComponent(at).replace(/%3A/gi, ":")}`
-    : path
 }
 
 function DemoTimeForm({ onDone }: { onDone: () => void }) {
@@ -144,6 +136,13 @@ function DemoTimeForm({ onDone }: { onDone: () => void }) {
             className={cn(buttonVariants({ variant: "link" }), "h-11")}
           >
             운영자 화면 열기
+          </Link>
+          <Link
+            to={keepAt("/ops/accuracy", search)}
+            onClick={onDone}
+            className={cn(buttonVariants({ variant: "link" }), "h-11")}
+          >
+            예측 점검 보기
           </Link>
         </div>
       </SheetFooter>

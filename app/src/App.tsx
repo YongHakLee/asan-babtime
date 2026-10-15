@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router"
 
 import { AppShell } from "@/components/layout/AppShell"
 import { ClockProvider } from "@/providers/clock"
+import AccuracyPage from "@/pages/Accuracy"
 import AlertsPage from "@/pages/Alerts"
 import HomePage from "@/pages/Home"
 import MapPage from "@/pages/Map"
@@ -21,6 +22,7 @@ export function App() {
             <Route path="alerts" element={<AlertsPage />} />
             <Route path="staff" element={<StaffPage />} />
             <Route path="ops" element={<OpsPage />} />
+            <Route path="ops/accuracy" element={<AccuracyPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

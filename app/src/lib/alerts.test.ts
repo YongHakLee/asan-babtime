@@ -20,6 +20,14 @@ describe('evaluateAlerts', () => {
       evaluateAlerts(snap('2026-10-14T12:40', 'busy'), snap('2026-10-14T12:41', 'ok'), subs, [], new Set(a.map((x) => x.key))).filter((x) => x.kind === 'queueCleared'),
     ).toHaveLength(0)
   })
+  it('queueCleared only when the new level is ok, not mid', () => {
+    for (const was of ['queue', 'busy'] as const) {
+      const toMid = evaluateAlerts(snap('2026-10-14T12:40', was), snap('2026-10-14T12:41', 'mid'), subs, [], new Set())
+      expect(toMid.some((x) => x.kind === 'queueCleared')).toBe(false)
+      const toOk = evaluateAlerts(snap('2026-10-14T12:40', was), snap('2026-10-14T12:41', 'ok'), subs, [], new Set())
+      expect(toOk.some((x) => x.kind === 'queueCleared')).toBe(true)
+    }
+  })
   it('favoriteDay at 10:30 when favorite appears', () =>
     expect(evaluateAlerts(null, snap('2026-10-14T10:31', 'ok'), subs, ['닭갈비'], new Set()).some((x) => x.kind === 'favoriteDay')).toBe(true))
   it('favoriteDay body names venue, meal and item', () => {

@@ -21,6 +21,11 @@ export function seoulWeekdayIndex(d: Date): number {
   return WEEKDAYS.indexOf(WEEKDAY_FMT.format(d))
 }
 
+/** "HH:MM" — 서울 기준, epoch ms */
+export function seoulHhmm(ms: number): string {
+  return TIME_FMT.format(new Date(ms))
+}
+
 /** 서울 기준 자정 이후 분 (0–1439) */
 export function seoulMinutes(d: Date): number {
   const [h, m] = TIME_FMT.format(d).split(":").map(Number)

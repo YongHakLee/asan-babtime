@@ -16,6 +16,7 @@ const ui = (
     <Route path="/" element={<Header />} />
     <Route path="/staff" element={<Where />} />
     <Route path="/ops" element={<Where />} />
+    <Route path="/ops/accuracy" element={<Where />} />
   </Routes>
 )
 
@@ -60,5 +61,18 @@ describe("DemoTimeSheet ops link", () => {
       await screen.findByRole("link", { name: "운영자 화면 열기" })
     )
     expect(screen.getByTestId("where").textContent).toBe("/ops")
+  })
+})
+
+describe("DemoTimeSheet accuracy link", () => {
+  it("opens the accuracy screen and keeps ?at=", async () => {
+    renderAt("2026-10-14T12:20", ui, { route: "/?at=2026-10-14T12:20" })
+    await userEvent.click(screen.getByRole("button", { name: "시연 시간" }))
+    await userEvent.click(
+      await screen.findByRole("link", { name: "예측 점검 보기" })
+    )
+    expect(screen.getByTestId("where")).toHaveTextContent(
+      "/ops/accuracy?at=2026-10-14T12:20"
+    )
   })
 })

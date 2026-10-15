@@ -76,6 +76,27 @@ test("home set by the demo sheet reflects staff input from a new tab", async ({
   ).toContainText("여유", { timeout: 3000 })
 })
 
+test("busy input shows busy on home and cancel restores the model", async ({
+  context,
+}) => {
+  const home = await context.newPage()
+  const staff = await context.newPage()
+  await home.goto(`/?at=${AT}`)
+  await staff.goto(`/staff?at=${AT}`)
+  const row = home.getByRole("listitem", { name: "동관 직원식당" })
+  await staff.getByRole("button", { name: "줄 있음" }).click()
+  await expect(row).toContainText("줄 있음", { timeout: 3000 })
+  await staff.getByRole("button", { name: "혼잡" }).click()
+  await expect(row).toContainText("혼잡", { timeout: 3000 })
+  // 모델(혼잡)과 다른 값을 마지막으로 입력해야 취소가 홈에서 눈에 보인다
+  await staff.getByRole("button", { name: "여유" }).click()
+  await expect(row).toContainText("여유", { timeout: 3000 })
+  await staff.getByRole("button", { name: "입력 취소" }).click()
+  await expect(staff.getByText(/입력을 취소했어요/)).toBeVisible()
+  await expect(row).toContainText("혼잡", { timeout: 3000 })
+  await expect(row).not.toContainText("여유")
+})
+
 test("reopening ?at= starts at the given time again", async ({ page }) => {
   await page.goto(`/?at=${AT}`)
   await expect(page.getByRole("banner")).toContainText("수요일 12:20")
@@ -95,8 +116,38 @@ test("reopening ?at= starts at the given time again", async ({ page }) => {
 
 test("big buttons are at least 96px tall", async ({ page }) => {
   await page.goto(`/staff?at=${AT}`)
-  for (const name of ["줄 있음", "여유"]) {
+  for (const name of ["여유", "보통", "줄 있음", "혼잡"]) {
     const box = await page.getByRole("button", { name }).boundingBox()
     expect(box!.height).toBeGreaterThanOrEqual(96)
   }
+})
+
+test("staff input clears the missing mark on ops", async ({ context }) => {
+  const ops = await context.newPage()
+  const staff = await context.newPage()
+  await ops.goto(`/ops?at=${AT}`)
+  await staff.goto(`/staff?at=${AT}`)
+  const row = ops
+    .locator("li", {
+      has: ops.getByText("동관", { exact: true }),
+    })
+    .first()
+  await expect(row).toContainText("직원 입력 누락")
+  await staff.getByRole("button", { name: "혼잡" }).click()
+  await expect(row).toContainText("직원 입력: 혼잡", { timeout: 3000 })
+  await staff.getByRole("button", { name: "입력 취소" }).click()
+  await expect(row).toContainText("직원 입력 누락, 오늘 입력 없음", {
+    timeout: 3000,
+  })
+})
+
+test("accuracy page renders KPI and bars", async ({ page }) => {
+  await page.goto(`/ops/accuracy?at=${AT}`)
+  await expect(page.getByText("등급 일치율").first()).toBeVisible()
+  const bars = page.locator('[data-slot="accuracy-bars"] button')
+  expect(await bars.count()).toBeGreaterThanOrEqual(1)
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth)
+  ).toBeLessThanOrEqual(390)
 })

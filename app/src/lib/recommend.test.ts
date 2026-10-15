@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getServiceStatus } from '@/lib/hours'
-import { setOverride } from '@/lib/override'
+import { addStaffEntry, entryRemainingMs } from '@/lib/override'
 import { effectiveWait } from '@/lib/status'
 
 import { t } from '@/test/time'
@@ -33,7 +33,7 @@ describe('recommend', () => {
 
   it('queue override on east pushes the recommendation past its expiry', () => {
     const at = t('2026-10-14T12:20')
-    setOverride('east', 'queue', at)
+    addStaffEntry('east', 'queue', at)
     const h = homeHeadline(at)
     expect(h.title).toBe('지금은 신관이 바로 드실 수 있어요')
     const r = recommendTime('east', 'lunch', at)!
@@ -44,7 +44,7 @@ describe('recommend', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     try {
       vi.setSystemTime(new Date('2026-10-20T01:00:00Z'))
-      setOverride('east', 'queue', t('2026-10-14T13:20'))
+      addStaffEntry('east', 'queue', t('2026-10-14T13:20'))
       vi.setSystemTime(new Date('2026-10-20T01:05:00Z'))
       // 실제로 5분 지났으니 10분 남았다. 모델은 13:15부터 한산하지만 13:30 전에는 권하지 않는다
       const at = t('2026-10-14T13:20')
@@ -53,9 +53,23 @@ describe('recommend', () => {
       vi.useRealTimers()
     }
   })
+  it('mid input with model wait under 3 recommends now', () => {
+    // 동관 2026-10-14 11:55 모델 대기 약 2.7분
+    const at = t('2026-10-14T11:55')
+    addStaffEntry('east', 'mid', at)
+    expect(effectiveWait('east', 'lunch', at).waitMinutes).toBeLessThan(3)
+    expect(recommendTime('east', 'lunch', at)!.getTime()).toBe(at.getTime())
+  })
+  it('mid input with model wait 3 or more waits for expiry', () => {
+    // 동관 2026-10-14 12:00 모델 대기 약 4.7분 → 보통 범위 위끝 4.4분
+    const at = t('2026-10-14T12:00')
+    const e = addStaffEntry('east', 'mid', at)
+    expect(effectiveWait('east', 'lunch', at).waitMinutes).toBeGreaterThanOrEqual(3)
+    expect(recommendTime('east', 'lunch', at)!.getTime()).toBeGreaterThanOrEqual(at.getTime() + entryRemainingMs(e))
+  })
   it('clear override on east: east wins the tie, west still clears later', () => {
     const at = t('2026-10-14T12:20')
-    setOverride('east', 'clear', at)
+    addStaffEntry('east', 'ok', at)
     const h = homeHeadline(at)
     expect(h.title).toBe('지금은 동관이 바로 드실 수 있어요')
     expect(h.tiles).toEqual(['동'])
@@ -63,14 +77,14 @@ describe('recommend', () => {
   })
   it('tie order is east, west, new', () => {
     const at = t('2026-10-14T12:20')
-    setOverride('west', 'clear', at)
+    addStaffEntry('west', 'ok', at)
     expect(homeHeadline(at)).toMatchObject({ title: '지금은 서관이 바로 드실 수 있어요', tiles: ['서'] })
     expect(homeHeadline(at).detail).toBe('동관은 13시 15분부터 한산해질 것으로 보여요')
   })
   it('no detail when the others are already quiet', () => {
     const at = t('2026-10-14T12:20')
-    setOverride('east', 'clear', at)
-    setOverride('west', 'clear', at)
+    addStaffEntry('east', 'ok', at)
+    addStaffEntry('west', 'ok', at)
     expect(homeHeadline(at)).toMatchObject({ title: '지금은 동관이 바로 드실 수 있어요', detail: null })
   })
   it('fastest-wait branch', () =>
@@ -144,7 +158,7 @@ describe('headline with a work building', () => {
   it('adds the expected wait right after opening when it is 2 minutes or more', () => {
     // 개시 직후 대기는 직원 입력 '줄 있음'(최소 5분)으로 만든다. 세 식당 모두 표시해 동관이 그대로 가장 빠르게
     const at = t('2026-10-14T10:55')
-    for (const hall of ['east', 'west', 'new'] as const) setOverride(hall, 'queue', at)
+    for (const hall of ['east', 'west', 'new'] as const) addStaffEntry(hall, 'queue', at)
     const m = Math.round(effectiveWait('east', 'lunch', t('2026-10-14T11:00')).waitMinutes)
     expect(m).toBeGreaterThanOrEqual(2)
     expect(homeHeadline(at, 'east')).toMatchObject({

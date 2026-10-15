@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { setSoldOut } from "@/lib/override"
+import { addStaffEntry, setSoldOut } from "@/lib/override"
 import OpsPage from "@/pages/Ops"
 import { renderAt } from "@/test/render"
 import { t } from "@/test/time"
@@ -40,7 +40,7 @@ describe("OpsPage", () => {
     expect(
       within(now).getByText("중식 배식 중이에요(15:00까지)")
     ).toBeInTheDocument()
-    expect(within(now).getAllByText("직원 입력 없음")).toHaveLength(3)
+    expect(within(now).getAllByText("직원 입력 누락, 오늘 입력 없음")).toHaveLength(3)
     const arrivals = screen.getByRole("region", {
       name: "오늘 시간대별 입장 추정",
     })
@@ -57,17 +57,7 @@ describe("OpsPage", () => {
   })
 
   it("shows staff input on its own line", () => {
-    localStorage.setItem(
-      "babttae.overrides",
-      JSON.stringify({
-        east: {
-          hall: "east",
-          kind: "queue",
-          at: t("2026-10-14T12:10").getTime(),
-          realAt: Date.now(),
-        },
-      })
-    )
+    addStaffEntry("east", "queue", t("2026-10-14T12:10"))
     renderAt("2026-10-14T12:20", <OpsPage />)
     const now = screen.getByRole("region", { name: "지금 상황" })
     expect(within(now).getByText("직원 입력: 줄 있음, 12:10")).toBeInTheDocument()
@@ -122,5 +112,53 @@ describe("OpsPage", () => {
     expect(
       within(prep).getByText("동관 꽈리고추간장닭갈비 준비량 상향 검토")
     ).toBeInTheDocument()
+  })
+})
+
+describe("OpsPage staff input", () => {
+  afterEach(() => vi.useRealTimers())
+
+  it("marks serving halls without staff input as missing", () => {
+    renderAt("2026-10-14T12:20", <OpsPage />)
+    const now = screen.getByRole("region", { name: "지금 상황" })
+    const marks = within(now).getAllByText("직원 입력 누락, 오늘 입력 없음")
+    expect(marks).toHaveLength(3)
+    for (const m of marks) expect(m).toHaveClass("text-status-busy")
+  })
+
+  it("shows the last input time once an entry expired", () => {
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(new Date("2026-10-20T01:00:00Z"))
+    addStaffEntry("east", "queue", t("2026-10-14T11:52"))
+    vi.setSystemTime(new Date("2026-10-20T01:16:00Z"))
+    renderAt("2026-10-14T12:20", <OpsPage />)
+    expect(screen.getByText("직원 입력 누락, 마지막 입력 11:52")).toBeInTheDocument()
+  })
+
+  it("active input clears the missing mark", () => {
+    addStaffEntry("west", "busy", t("2026-10-14T12:18"))
+    renderAt("2026-10-14T12:20", <OpsPage />)
+    expect(screen.getByText("직원 입력: 혼잡, 12:18")).toBeInTheDocument()
+    expect(screen.getAllByText(/직원 입력 누락/)).toHaveLength(2)
+  })
+
+  it("not missing before service", () => {
+    renderAt("2026-10-14T10:30", <OpsPage />)
+    expect(screen.queryByText(/직원 입력 누락/)).toBeNull()
+  })
+
+  it("explains the missing rule in the caption", () => {
+    renderAt("2026-10-14T12:20", <OpsPage />)
+    expect(
+      screen.getByText(/배식 중인데 15분 안의 직원 입력이 없으면 누락으로 표시해요\./)
+    ).toBeInTheDocument()
+  })
+
+  it("links to the accuracy screen keeping ?at=", () => {
+    renderAt("2026-10-14T12:20", <OpsPage />, { route: "/ops?at=2026-10-14T12:20" })
+    expect(screen.getByRole("link", { name: "예측 점검 보기" })).toHaveAttribute(
+      "href",
+      "/ops/accuracy?at=2026-10-14T12:20"
+    )
   })
 })

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { BUILDINGS } from '@/data/buildings'
 import type { BuildingId } from '@/domain/types'
-import { setOverride } from '@/lib/override'
+import { addStaffEntry } from '@/lib/override'
 import { t } from '@/test/time'
 
 import { fastestHall, hallOptions, walkMinutes } from './walk'
@@ -89,7 +89,7 @@ describe('walk', () => {
 
   it('staff clear on east counts as no wait on arrival', () => {
     const at = t('2026-10-14T12:20')
-    setOverride('east', 'clear', at)
+    addStaffEntry('east', 'ok', at)
     const east = hallOptions(at, 'east').find((o) => o.hall === 'east')!
     expect(east.waitOnArrival).toBe(0)
     expect(fastestHall(at, 'east')).toMatchObject({ hall: 'east', walk: 2 })

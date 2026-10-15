@@ -21,7 +21,7 @@ export interface PatternRow {
 }
 
 /** 메뉴를 저장해 둔 주(월~일). 패턴은 이 주의 요일별 메뉴 인기도로 모델을 돌린 결과다. */
-const WEEK: { date: string; dayLabel: DayLabel }[] = (
+export const WEEK: { date: string; dayLabel: DayLabel }[] = (
   ['월', '화', '수', '목', '금', '토', '일'] as const
 ).map((dayLabel, i) => ({ date: `2026-10-${String(12 + i).padStart(2, '0')}`, dayLabel }))
 

@@ -1,12 +1,15 @@
 import { useEffect, useReducer, type ReactNode } from "react"
+import { Link, useLocation } from "react-router"
 
 import { StatusLines, StatusText } from "@/components/common/StatusText"
 import { ArrivalBars, ArrivalLegend } from "@/components/ops/ArrivalBars"
+import { buttonVariants } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { DINING_HALLS as HALLS, VENUES } from "@/data/restaurants"
 import type { DiningHallId, MealKey } from "@/domain/types"
 import { useClock } from "@/hooks/useClock"
 import { useVenueStatus } from "@/hooks/useVenueStatus"
+import { keepAt } from "@/lib/demoLink"
 import { formatMinutes, seoulMinutes, seoulWeekdayTime } from "@/lib/format"
 import { getNextService, getServiceStatus, seoulYmd } from "@/lib/hours"
 import {
@@ -17,10 +20,11 @@ import {
   todayArrivals,
   tomorrowPrep,
 } from "@/lib/ops"
-import { getActiveOverride, subscribeOverrides } from "@/lib/override"
+import { getActiveEntry, lastEntryOn, subscribeOverrides } from "@/lib/override"
 import { subscribePrefs } from "@/lib/prefs"
 import { LEVEL_LABEL } from "@/lib/queue"
 import { MEAL_LABEL } from "@/lib/recommend"
+import { cn } from "@/lib/utils"
 
 const MEALS: MealKey[] = ["breakfast", "lunch", "dinner", "mobile", "lateNight"]
 const hm = (d: Date) => formatMinutes(seoulMinutes(d))
@@ -81,13 +85,9 @@ function HallLine({
 
 function NowRow({ hall }: { hall: DiningHallId }) {
   const { now } = useClock()
-  const { meal, status, level, waitMinutes, source } = useVenueStatus(hall)
-  const o = getActiveOverride(hall)
-  const staff =
-    source === "staff" && o
-      ? `직원 입력: ${LEVEL_LABEL[o.kind === "queue" ? "queue" : "ok"]}, ${hm(new Date(o.at))}`
-      : "직원 입력 없음"
-
+  const { meal, status, level, waitMinutes } = useVenueStatus(hall)
+  const o = getActiveEntry(hall)
+  const last = o ? null : lastEntryOn(hall, seoulYmd(now))
   if (meal && status?.kind === "open") {
     return (
       <HallLine
@@ -95,7 +95,13 @@ function NowRow({ hall }: { hall: DiningHallId }) {
         sub={
           <>
             <span className="block">{`${MEAL_LABEL[meal]} 배식 중이에요(${hm(status.closesAt)}까지)`}</span>
-            <span className="block">{staff}</span>
+            {o ? (
+              <span className="block">{`직원 입력: ${LEVEL_LABEL[o.level]}, ${hm(new Date(o.at))}`}</span>
+            ) : (
+              <span className="block font-semibold text-status-busy">
+                {`직원 입력 누락, ${last ? `마지막 입력 ${hm(new Date(last.at))}` : "오늘 입력 없음"}`}
+              </span>
+            )}
           </>
         }
         aside={<StatusText level={level} waitMinutes={waitMinutes} />}
@@ -139,7 +145,7 @@ function NowSection() {
     <Section
       id="ops-now"
       title="지금 상황"
-      caption="예상 대기는 모델 예측이고, 검수 직원 입력이 있으면 그 값을 먼저 써요."
+      caption="예상 대기는 모델 예측이고, 검수 직원 입력이 있으면 그 값을 먼저 써요. 배식 중인데 15분 안의 직원 입력이 없으면 누락으로 표시해요."
     >
       <ul className="flex flex-col">
         {HALLS.map((hall, i) => (
@@ -348,6 +354,7 @@ function PrepSection({ now }: { now: Date }) {
 
 export default function OpsPage() {
   const { now } = useClock()
+  const { search } = useLocation()
   // 품절 입력·평가가 바뀌면 다시 그린다
   const [, bump] = useReducer((n: number) => n + 1, 0)
   useEffect(() => subscribeOverrides(bump), [])
@@ -393,6 +400,15 @@ export default function OpsPage() {
               <PrepSection now={now} />
             </div>
           </div>
+          <Link
+            to={keepAt("/ops/accuracy", search)}
+            className={cn(
+              buttonVariants({ variant: "link" }),
+              "h-11 self-start"
+            )}
+          >
+            예측 점검 보기
+          </Link>
         </div>
       </div>
     </main>

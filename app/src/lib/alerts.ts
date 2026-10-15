@@ -91,7 +91,7 @@ export function evaluateAlerts(
       const mealNext = getActiveMeal(hall, next.at)
       const mealPrev = getActiveMeal(hall, prev.at)
       if (!mealNext || mealNext !== mealPrev) continue
-      if ((was === 'queue' || was === 'busy') && (now === 'ok' || now === 'mid')) {
+      if ((was === 'queue' || was === 'busy') && now === 'ok') {
         push({
           key: `queueCleared:${hall}:${date}:${String(h).padStart(2, '0')}`,
           kind: 'queueCleared',
