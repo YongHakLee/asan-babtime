@@ -11,6 +11,7 @@ import { cn } from "cn"
 
 import { DemoTimeSheet } from "@/components/layout/DemoTimeSheet"
 import { NAV_ITEMS } from "@/components/layout/nav"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useClock } from "@/hooks/useClock"
@@ -31,14 +32,7 @@ export function Header() {
   return (
     <header className="bg-deep px-4 text-deep-foreground">
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 py-3">
-        <p className="relative text-base font-semibold">
-          밥타임
-          <span
-            aria-hidden="true"
-            data-slot="brand-mark"
-            className="absolute -bottom-0.5 left-0 h-[3px] w-4 rounded-full bg-brand-orange"
-          />
-        </p>
+        <p className="text-base font-semibold">밥타임</p>
 
         <nav aria-label="주요 메뉴" className="hidden md:block">
           <ul className="flex gap-1">
@@ -49,25 +43,14 @@ export function Header() {
                   end={to === "/"}
                   className={({ isActive }) =>
                     cn(
-                      "relative flex h-11 items-center rounded-4xl px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-deep-foreground",
+                      "flex h-11 items-center rounded-4xl px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-deep-foreground",
                       isActive
                         ? "bg-deep-foreground/15 font-semibold"
                         : "opacity-80 hover:opacity-100"
                     )
                   }
                 >
-                  {({ isActive }) => (
-                    <>
-                      {label}
-                      {isActive && (
-                        <span
-                          aria-hidden="true"
-                          data-slot="active-mark"
-                          className="absolute bottom-1.5 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-brand-orange"
-                        />
-                      )}
-                    </>
-                  )}
+                  {label}
                 </NavLink>
               </li>
             ))}
@@ -76,7 +59,11 @@ export function Header() {
 
         <p className="ml-auto text-sm tabular-nums">
           {seoulWeekdayTime(now)}
-          {isDemo && <span className="ml-2 font-semibold">시연 중</span>}
+          {isDemo && (
+            <Badge variant="brand" className="ml-2">
+              시연 중
+            </Badge>
+          )}
         </p>
 
         <div className="flex basis-full items-center justify-between gap-2 md:basis-auto">

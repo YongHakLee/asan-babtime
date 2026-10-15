@@ -15,6 +15,11 @@ describe('recommend', () => {
     expect(h.title).toBe('지금은 신관이 바로 드실 수 있어요')
     expect(h.detail).toBe('동관은 13시 15분, 서관은 12시 45분부터 한산해질 것으로 보여요')
     expect(h.tiles).toEqual(['신'])
+    expect(h.pick).toBe('new')
+  })
+  it('no pick when nothing is open', () => {
+    expect(homeHeadline(t('2026-10-14T15:30')).pick).toBeNull()
+    expect(homeHeadline(t('2026-10-15T03:00')).pick).toBeNull()
   })
   it('15:30 shows next service', () =>
     expect(homeHeadline(t('2026-10-14T15:30')).title).toBe('다음 배식은 석식 17:30부터예요'))

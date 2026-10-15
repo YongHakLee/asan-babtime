@@ -5,6 +5,7 @@ export type BuildingGlyph = "동" | "서" | "신" | "도"
 /**
  * 병원 길안내 사인물의 건물 한 글자 타일.
  * solid: 직원식당 행 · soft: 도시락처럼 보조 항목 · inverse: 딥 그린 위(홈 상단).
+ * pick: 홈 결론이 지금 가라고 고른 식당(위 타일과 목록 타일을 같은 오렌지로 잇는다).
  * 글자는 장식이므로 읽지 않게 하고, 이름은 곁의 글이 맡는다.
  */
 export function BuildingTile({
@@ -13,7 +14,7 @@ export function BuildingTile({
   className,
 }: {
   glyph: BuildingGlyph
-  tone?: "solid" | "soft" | "inverse"
+  tone?: "solid" | "soft" | "inverse" | "pick"
   className?: string
 }) {
   return (
@@ -25,6 +26,7 @@ export function BuildingTile({
         tone === "solid" && "bg-primary text-primary-foreground",
         tone === "soft" && "bg-accent text-[0.9375rem] text-primary",
         tone === "inverse" && "bg-deep-foreground text-deep",
+        tone === "pick" && "bg-brand-orange text-brand-orange-foreground",
         className
       )}
     >

@@ -15,9 +15,16 @@ describe("Home", () => {
     expect(
       hero.querySelector("[data-slot=hero-tiles]")?.textContent
     ).toBe("신")
-    const mark = hero.querySelector("[data-slot=headline-mark]")
-    expect(mark).toHaveClass("bg-brand-orange")
-    expect(mark).toHaveAttribute("aria-hidden", "true")
+    // 결론이 고른 식당은 위 타일과 목록의 타일이 함께 오렌지다
+    expect(hero.querySelector("[data-slot=building-tile]")).toHaveClass(
+      "bg-brand-orange"
+    )
+    const picked = [
+      ...screen
+        .getByRole("region", { name: "식당별 상황" })
+        .querySelectorAll("[data-slot=building-tile].bg-brand-orange"),
+    ].map((el) => el.textContent)
+    expect(picked).toEqual(["신"])
     expect(
       screen.getByText(/^동관은 .+, 서관은 .+부터 한산해질 것으로 보여요$/)
     ).toBeInTheDocument()
@@ -29,6 +36,15 @@ describe("Home", () => {
     expect(
       screen.getByText("꽈리고추간장닭갈비, 순두부찌개")
     ).toBeInTheDocument()
+  })
+
+  it("keeps the hero tile white when no hall is open", () => {
+    renderAt("2026-10-14T15:30", <Home />)
+    const hero = screen.getByRole("heading", { level: 1 }).closest("section")!
+    expect(hero.querySelector("[data-slot=building-tile]")).not.toHaveClass(
+      "bg-brand-orange"
+    )
+    expect(document.querySelectorAll(".bg-brand-orange")).toHaveLength(0)
   })
 
   it("lists the three dining halls in order, then box lunch", () => {

@@ -103,7 +103,13 @@ function nextService(at: Date): { meal: MealKey; opensAt: Date } | null {
 const nextServiceLine = (n: { meal: MealKey; opensAt: Date }) =>
   `다음 배식은 ${MEAL_LABEL[n.meal]} ${clock(n.opensAt)}부터예요`
 
-export function homeHeadline(at: Date): { title: string; detail: string | null; tiles: Tile[] } {
+/** pick: 지금 열려 있어 결론 문장이 가라고 고른 식당. 열린 곳이 없으면 null. */
+export function homeHeadline(at: Date): {
+  title: string
+  detail: string | null
+  tiles: Tile[]
+  pick: DiningHallId | null
+} {
   const open = HALLS.flatMap((hall) => {
     const meal = getActiveMeal(hall, at)
     if (!meal || getServiceStatus(hall, meal, at).kind !== 'open') return []
@@ -112,10 +118,10 @@ export function homeHeadline(at: Date): { title: string; detail: string | null; 
 
   if (open.length === 0) {
     const next = nextService(at)
-    if (!next) return { title: '오늘은 배식 정보가 없어요', detail: null, tiles: ['동'] }
+    if (!next) return { title: '오늘은 배식 정보가 없어요', detail: null, tiles: ['동'], pick: null }
     const dishes = summary(getCourses(next.opensAt, 'east', next.meal))
     const detail = dishes ? `${MEAL_LABEL[next.meal]} 메뉴: ${dishes}` : null
-    return { title: nextServiceLine(next), detail, tiles: ['동'] }
+    return { title: nextServiceLine(next), detail, tiles: ['동'], pick: null }
   }
 
   const best = open.reduce((a, b) => (b.wait < a.wait ? b : a))
@@ -137,5 +143,5 @@ export function homeHeadline(at: Date): { title: string; detail: string | null; 
   } else if (open.length === 1 && best.hall === 'east' && isWestNewClosedToday(at)) {
     detail = '주말과 공휴일에는 동관만 운영해요'
   }
-  return { title, detail, tiles: [VENUES[best.hall].short] }
+  return { title, detail, tiles: [VENUES[best.hall].short], pick: best.hall }
 }

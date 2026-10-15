@@ -69,17 +69,6 @@ h2 {
   letter-spacing: -0.01em;
   border-bottom: 1.5px solid var(--deep);
   break-before: page;
-  position: relative;
-}
-/* 장 제목 밑줄 왼쪽 끝을 표지 선과 같은 오렌지로 */
-h2::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -1.5px;
-  width: 14mm;
-  height: 1.5px;
-  background: var(--brand-orange);
 }
 .doc > h2:first-child { break-before: auto; }
 h3 { margin: 9mm 0 3mm; font-size: 13.5pt; font-weight: 700; line-height: 1.45; }
@@ -98,6 +87,16 @@ thead { display: table-header-group; }
 tr, figure { break-inside: avoid; }
 th, td { padding: 2.2mm 3mm; text-align: left; vertical-align: top; border-bottom: 0.5pt solid var(--border); }
 thead th { background: var(--accent); color: var(--deep); font-weight: 700; border-bottom: 1pt solid var(--deep); }
+
+/* 핵심 수치 강조: 옅은 오렌지 면 위에 본문 글자색(오렌지를 글자색으로 쓰지 않는다) */
+mark {
+  background: color-mix(in srgb, var(--brand-orange) 22%, var(--card));
+  color: inherit;
+  font-weight: 700;
+  padding: 0 0.15em;
+  border-radius: 2px;
+}
+tr.key-row td { background: color-mix(in srgb, var(--brand-orange) 18%, var(--card)); }
 
 /* 인용·강조 상자 */
 blockquote {
