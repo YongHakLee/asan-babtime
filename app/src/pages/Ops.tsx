@@ -402,7 +402,10 @@ export default function OpsPage() {
           </div>
           <Link
             to={keepAt("/ops/accuracy", search)}
-            className={cn(buttonVariants({ variant: "link" }), "self-start")}
+            className={cn(
+              buttonVariants({ variant: "link" }),
+              "h-11 self-start"
+            )}
           >
             예측 점검 보기
           </Link>

@@ -87,6 +87,11 @@ const PARTICLE: Record<CongestionLevel, string> = {
   busy: "으로",
 }
 
+/** 비교 문장의 대기 분: 4.6분이 "약 5분"으로 올라가 직원 등급(2–5분)과 어긋나 보이지 않게 내림한다. */
+function compareWait(waitMinutes: number): string {
+  return waitText(waitMinutes < 1 ? 0 : Math.floor(waitMinutes))
+}
+
 function EntranceInput({ hall }: { hall: DiningHallId }) {
   const { now } = useClock()
   const [, bump] = useReducer((n: number) => n + 1, 0)
@@ -101,24 +106,9 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
 
   return (
     <section aria-labelledby="entrance-title" className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <h2 id="entrance-title" className="text-lg font-bold tracking-tight">
-          입구 상황
-        </h2>
-        {active && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              cancelStaffEntry(active.id)
-              setCancelledHall(hall)
-            }}
-          >
-            입력 취소
-          </Button>
-        )}
-      </div>
+      <h2 id="entrance-title" className="text-lg font-bold tracking-tight">
+        입구 상황
+      </h2>
       <div className="grid grid-cols-2 gap-3">
         {BUTTONS.map((b) => {
           const pressed = active?.level === b.level
@@ -159,7 +149,7 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
         })}
       </div>
       {/* 입력하거나 풀릴 때만 읽어 준다. 매분 바뀌는 남은 시간은 라이브 영역 밖에 둔다 */}
-      <p role="status" className="sr-only">
+      <p key={active?.id ?? "none"} role="status" className="sr-only">
         {active
           ? `${LEVEL_LABEL[active.level]} 입력됨`
           : justCancelled
@@ -168,11 +158,24 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
       </p>
       {active ? (
         <>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              {`${formatMinutes(seoulMinutes(new Date(active.at)))}에 입력, ${left}분 남음`}
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                cancelStaffEntry(active.id)
+                setCancelledHall(hall)
+              }}
+            >
+              입력 취소
+            </Button>
+          </div>
           <p className="text-sm text-muted-foreground">
-            {`${formatMinutes(seoulMinutes(new Date(active.at)))}에 입력, ${left}분 남음`}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {`모델${active.model.level === active.level ? "도" : "은"} ${LEVEL_LABEL[active.model.level]}(${waitText(active.model.waitMinutes)})${PARTICLE[active.model.level]} 봤어요`}
+            {`모델${active.model.level === active.level ? "도" : "은"} ${LEVEL_LABEL[active.model.level]}(${compareWait(active.model.waitMinutes)})${PARTICLE[active.model.level]} 봤어요`}
           </p>
         </>
       ) : (

@@ -235,4 +235,47 @@ describe("Staff entrance input", () => {
       screen.getByText("모델은 여유(대기 없음)로 봤어요")
     ).toBeInTheDocument()
   })
+
+  it("floors the model minutes in the comparison line", async () => {
+    localStorage.setItem(
+      "babttae.staffLog",
+      JSON.stringify([
+        {
+          id: "seed",
+          hall: "east",
+          level: "mid",
+          at: t("2026-10-14T12:20").getTime(),
+          realAt: Date.now(),
+          model: { level: "mid", waitMinutes: 4.6 },
+        },
+      ])
+    )
+    renderAt("2026-10-14T12:20", <StaffPage />)
+    expect(
+      screen.getByText("모델도 보통(약 4분)으로 봤어요")
+    ).toBeInTheDocument()
+  })
+
+  it("re-announces when the same level is pressed again", async () => {
+    renderAt("2026-10-14T12:20", <StaffPage />)
+    await userEvent.click(btn("혼잡"))
+    const first = within(entrance()).getByRole("status")
+    await userEvent.click(btn("혼잡"))
+    const second = within(entrance()).getByRole("status")
+    expect(second).not.toBe(first)
+    expect(first.isConnected).toBe(false)
+    expect(second).toHaveTextContent("혼잡 입력됨")
+  })
+
+  it("keeps the cancel button in the time line, not the heading", async () => {
+    renderAt("2026-10-14T12:20", <StaffPage />)
+    const cancelBtn = () => screen.queryByRole("button", { name: "입력 취소" })
+    expect(cancelBtn()).toBeNull()
+    await userEvent.click(btn("혼잡"))
+    const heading = screen.getByRole("heading", { name: "입구 상황" })
+    expect(cancelBtn()!.parentElement).not.toBe(heading.parentElement)
+    expect(cancelBtn()!.parentElement).toContainElement(
+      screen.getByText(/12:20에 입력/)
+    )
+  })
 })

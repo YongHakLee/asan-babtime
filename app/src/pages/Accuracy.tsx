@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useReducer, useState, type ReactNode } from "react"
 import { Link, useLocation, useNavigate } from "react-router"
 
 import { AccuracyBars } from "@/components/ops/AccuracyBars"
@@ -84,7 +84,10 @@ function BinTable({ bins }: { bins: AccuracyBin[] }) {
       <TableBody>
         {bins.map((b) => (
           <TableRow key={b.start}>
-            <TableCell className="px-2 tabular-nums">{`${b.start}–${b.end}`}</TableCell>
+            <TableHead
+              scope="row"
+              className="h-auto px-2 py-2 font-normal tabular-nums"
+            >{`${b.start}–${b.end}`}</TableHead>
             <TableCell className={num}>{b.total}</TableCell>
             <TableCell className={num}>{b.match}</TableCell>
             <TableCell className={num}>
@@ -129,7 +132,7 @@ export default function AccuracyPage() {
   const navigate = useNavigate()
   const [tableOpen, setTableOpen] = useState(false)
   // 직원 입력이 바뀌면(다른 탭 포함) 다시 그린다
-  const [, bump] = useReducer((n: number) => n + 1, 0)
+  const [version, bump] = useReducer((n: number) => n + 1, 0)
   useEffect(() => subscribeOverrides(bump), [])
 
   const raw = new URLSearchParams(search).get("hall")
@@ -144,7 +147,10 @@ export default function AccuracyPage() {
     navigate({ search: s ? `?${s}` : "" }, { replace: true })
   }
 
-  const entries = judgedEntries(now)
+  // 식당 필터나 30초 시계로는 다시 계산하지 않는다: 분과 입력 기록이 바뀔 때만
+  const minute = Math.floor(now.getTime() / 60_000)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const entries = useMemo(() => judgedEntries(now), [minute, version])
   const summary = accuracySummary(entries, hall)
   const bins = accuracyBins(entries, hall)
 
@@ -236,7 +242,7 @@ export default function AccuracyPage() {
                     variant="outline"
                     size="sm"
                     aria-expanded={tableOpen}
-                    aria-controls="accuracy-table"
+                    aria-controls={tableOpen ? "accuracy-table" : undefined}
                     onClick={() => setTableOpen((o) => !o)}
                     className="self-end"
                   >

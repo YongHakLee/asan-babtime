@@ -1,5 +1,6 @@
 import { DINING_HALLS } from '@/data/restaurants'
 import type { DiningHallId } from '@/domain/types'
+import { seoulHhmm } from '@/lib/format'
 import { dayKind, getServiceStatus, seoulYmd, windowOn } from '@/lib/hours'
 import { modelWait } from '@/lib/model'
 import { allStaffEntries } from '@/lib/override'
@@ -21,14 +22,7 @@ const ORDER: CongestionLevel[] = ['ok', 'mid', 'queue', 'busy']
 
 const weekdays = WEEK.map((w) => w.date).filter((ymd) => dayKind(new Date(`${ymd}T12:00:00+09:00`)) === 'weekday')
 
-function hhmm(ms: number): string {
-  const p = Object.fromEntries(
-    new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
-      .formatToParts(new Date(ms))
-      .map((x) => [x.type, x.value]),
-  )
-  return `${p.hour}:${p.minute}`
-}
+const hhmm = seoulHhmm
 
 /** 모델 등급에서 한 단계 어긋난 직원 등급(범위를 벗어나면 모델 그대로). */
 function staffLevel(hall: DiningHallId, ymd: string, at: number, model: CongestionLevel): CongestionLevel {
