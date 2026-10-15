@@ -17,7 +17,7 @@ test("staff input reflects on home in another tab", async ({ context }) => {
     "aria-pressed",
     "true"
   )
-  await expect(staff.getByText(/에 입력, \d+분 남음/)).toBeVisible()
+  await expect(staff.getByText(/까지 유지돼요\(\d+분 남음\)/)).toBeVisible()
   await expect(
     home.getByRole("listitem", { name: "서관 직원식당" })
   ).toContainText("여유")
@@ -47,7 +47,7 @@ test("home on a demo ?at= reflects staff input made on the real clock", async ({
   await staff.goto("/staff")
   await staff.getByRole("button", { name: "서관", exact: true }).click()
   await staff.getByRole("button", { name: "여유" }).click()
-  await expect(staff.getByText(/에 입력, 15분 남음/)).toBeVisible()
+  await expect(staff.getByText(/까지 유지돼요\(15분 남음\)/)).toBeVisible()
   await expect(
     home.getByRole("listitem", { name: "서관 직원식당" })
   ).toContainText("여유", { timeout: 3000 })
@@ -91,8 +91,8 @@ test("busy input shows busy on home and cancel restores the model", async ({
   // 모델(혼잡)과 다른 값을 마지막으로 입력해야 취소가 홈에서 눈에 보인다
   await staff.getByRole("button", { name: "여유" }).click()
   await expect(row).toContainText("여유", { timeout: 3000 })
-  await staff.getByRole("button", { name: "입력 취소" }).click()
-  await expect(staff.getByText(/입력을 취소했어요/)).toBeVisible()
+  await staff.getByRole("button", { name: "선택 취소" }).click()
+  await expect(staff.getByText(/지금 입구 상황을 골라 주세요/)).toBeVisible()
   await expect(row).toContainText("혼잡", { timeout: 3000 })
   await expect(row).not.toContainText("여유")
 })
@@ -135,7 +135,7 @@ test("staff input clears the missing mark on ops", async ({ context }) => {
   await expect(row).toContainText("직원 입력 누락")
   await staff.getByRole("button", { name: "혼잡" }).click()
   await expect(row).toContainText("직원 입력: 혼잡", { timeout: 3000 })
-  await staff.getByRole("button", { name: "입력 취소" }).click()
+  await staff.getByRole("button", { name: "선택 취소" }).click()
   await expect(row).toContainText("직원 입력 누락, 오늘 입력 없음", {
     timeout: 3000,
   })
