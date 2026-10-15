@@ -5,7 +5,7 @@
 ## 현재 상태
 | 항목 | 상태 |
 |---|---|
-| 브랜치 | `master` 하나(작업 브랜치·worktree 모두 정리됨), 원격 저장소 없음 |
+| 브랜치 | `master` 하나(작업 브랜치와 worktree 모두 정리됨). 원격 `origin` = 공개 저장소 https://github.com/YongHakLee/asan-babtime (2026-10-15 생성, `reference/`는 기록에서 지우고 `.gitignore`에 넣음) |
 | 웹앱 | `app/` — v3 배포됨 https://asan-babtime.vercel.app (Vercel 프로젝트 `asan-babtime`, 2026-10-15 10:14 배포). v3 = 검수 직원 4단계 입력, 입력 누락 표시, 예측 점검 화면. v3.1(근무 건물과 도보 제거, 직원 화면 문구) 미배포, 사용자 확인 후 배포 |
 | 제안서 | `proposal/상세제안서.md` → `proposal/상세제안서.pdf` (16쪽: 본문 15 + 부록 A) |
 | 검증 | 단위 251, E2E 50 통과(8 건너뜀: 화면별 spec이 모바일 또는 데스크톱 프로젝트 한쪽에서만 도는 테스트) / 제안서 verify PASS |
@@ -52,4 +52,4 @@ vercel deploy --prod --yes
 - 설계: `docs/superpowers/specs/2026-10-14-asan-cafeteria-design.md`(v1), `docs/superpowers/specs/2026-10-14-babtime-v2-design.md`(v2)
 - 계획: `docs/superpowers/plans/` (v1 웹앱, v1 제안서, v2)
 - 근거 자료: `docs/research/2026-10-14-research-notes.md`
-- 원본 메뉴표: `reference/` (병원 내부 자료 — 공개 저장소에 올리지 말 것)
+- 원본 메뉴표: `reference/` (병원 내부 자료 — `.gitignore`로 제외, 로컬에만 있음. 공개 저장소에 올리지 말 것)
