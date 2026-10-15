@@ -8,18 +8,15 @@ import { ForecastBars } from "@/components/common/ForecastBars"
 import { ServiceStrip } from "@/components/common/ServiceStrip"
 import { StatusLines, StatusText } from "@/components/common/StatusText"
 import { HallDetailSheet } from "@/components/home/HallDetailSheet"
-import { WorkBuildingChip } from "@/components/home/WorkBuildingSheet"
 import { Separator } from "@/components/ui/separator"
 import { DINING_HALLS as HALLS, VENUES } from "@/data/restaurants"
 import type {
-  BuildingId,
   DiningHallId,
   MealKey,
   ServiceStatus,
   VenueId,
 } from "@/domain/types"
 import { useClock } from "@/hooks/useClock"
-import { usePrefs } from "@/hooks/usePrefs"
 import { useVenueStatus } from "@/hooks/useVenueStatus"
 import {
   formatMinutes,
@@ -36,7 +33,6 @@ import {
 import { getCourses, MENU_WEEK_LABEL, summary } from "@/lib/menu"
 import { forecast, homeHeadline, MEAL_LABEL } from "@/lib/recommend"
 import { cn } from "@/lib/utils"
-import { walkMinutes } from "@/lib/walk"
 
 const MEALS: MealKey[] = ["breakfast", "lunch", "dinner", "mobile", "lateNight"]
 const DAY_MS = 86_400_000
@@ -91,7 +87,6 @@ function Row({
   menu,
   status,
   extra,
-  walk,
   onOpen,
 }: {
   name: string
@@ -100,8 +95,6 @@ function Row({
   menu: string
   status: ReactNode
   extra?: ReactNode
-  /** 근무 건물에서 걸어서 걸리는 시간(분). 설정했을 때만 */
-  walk?: number
   /** 있으면 줄 전체가 상세 시트를 여는 버튼이 된다 */
   onOpen?: () => void
 }) {
@@ -132,11 +125,6 @@ function Row({
               name
             )}
           </h2>
-          {walk !== undefined && (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              걸어서 {walk}분(추정)
-            </span>
-          )}
         </div>
         {menu && (
           <p className="mt-0.5 text-[0.8125rem] leading-snug text-muted-foreground">
@@ -152,19 +140,14 @@ function Row({
 
 function HallRow({
   hall,
-  from,
   onOpen,
 }: {
   hall: DiningHallId
-  from: BuildingId | null
   onOpen: () => void
 }) {
   const { now } = useClock()
   const { meal, status, level, waitMinutes } = useVenueStatus(hall)
   const venue = VENUES[hall]
-  // 오늘 쉬는 식당에는 도보 시간을 붙이지 않는다
-  const walk =
-    from && servesToday(hall, now) ? walkMinutes(from, hall) : undefined
 
   if (meal && status?.kind === "open") {
     const busy = level === "queue" || level === "busy"
@@ -172,7 +155,6 @@ function HallRow({
       <Row
         name={venue.name}
         glyph={venue.short}
-        walk={walk}
         onOpen={onOpen}
         menu={summary(getCourses(status.opensAt, hall, meal))}
         status={<StatusText level={level} waitMinutes={waitMinutes} />}
@@ -186,7 +168,6 @@ function HallRow({
     <Row
       name={venue.name}
       glyph={venue.short}
-      walk={walk}
       onOpen={onOpen}
       menu={idle.menu}
       status={
@@ -270,8 +251,7 @@ function stripFor(now: Date): { meal: MealKey; status: ServiceStatus } | null {
 
 export default function HomePage() {
   const { now } = useClock()
-  const { workBuilding } = usePrefs()
-  const { title, detail, tiles } = homeHeadline(now, workBuilding)
+  const { title, detail, tiles } = homeHeadline(now)
   const strip = stripFor(now)
   const [sheetHall, setSheetHall] = useState<DiningHallId>("east")
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -313,7 +293,6 @@ export default function HomePage() {
         aria-label="식당별 상황"
         className="relative -mt-[18px] flex flex-1 flex-col rounded-t-3xl bg-card px-4 pt-4 pb-6 lg:mt-0 lg:rounded-tr-none lg:pt-10 lg:pr-[max(1rem,calc((100cqw_-_64rem)/2))] lg:pl-12"
       >
-        <WorkBuildingChip />
         {strip && <ServiceStrip meal={strip.meal} status={strip.status} />}
         <ul className="mt-1.5 flex flex-col">
           {HALLS.map((hall, i) => (
@@ -321,7 +300,6 @@ export default function HomePage() {
               {i > 0 && <Separator />}
               <HallRow
                 hall={hall}
-                from={workBuilding}
                 onOpen={() => {
                   setSheetHall(hall)
                   setSheetOpen(true)

@@ -1,6 +1,6 @@
 export type DiningHallId = 'east' | 'west' | 'new'
 export type VenueId = DiningHallId | 'boxLunch'
-/** 근무 건물(지도 블록과 도보 시간의 출발점) */
+/** 지도에 블록으로 그리는 건물 */
 export type BuildingId = 'east' | 'west' | 'new' | 'eduResearch' | 'asanLife'
 /** 메뉴 묶음. 서관·신관은 같은 메뉴(westNew)를 함께 쓴다. */
 export type MenuGroupId = 'east' | 'westNew' | 'boxLunch'

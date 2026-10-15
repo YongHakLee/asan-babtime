@@ -117,68 +117,24 @@ describe("Home", () => {
     expect(screen.getByText("10월 3주차 메뉴 기준이에요.")).toBeInTheDocument()
   })
 
-  it("sets a work building from the chip and recommends by walk + wait", async () => {
-    const user = userEvent.setup()
-    renderAt("2026-10-14T12:20", <Home />)
-    // 미설정이면 줄에 도보 표기가 없다
-    expect(screen.queryByText(/걸어서/)).toBeNull()
-    await user.click(screen.getByRole("button", { name: "근무 건물: 미설정" }))
-    const sheet = screen.getByRole("dialog", { name: "근무 건물" })
-    const options = within(sheet).getAllByRole("button", { pressed: false })
-    expect(options.map((b) => b.textContent)).toEqual([
-      "동관",
-      "서관",
-      "신관",
-      "교육연구관",
-      "아산생명과학연구원",
-    ])
-    await user.click(within(sheet).getByRole("button", { name: "서관" }))
-
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "지금 출발하면 신관이 가장 빨라요"
-    )
-    expect(
-      screen.getByText("걸어서 4분, 도착하면 바로 드실 수 있어요")
-    ).toBeInTheDocument()
-    const nw = screen.getByRole("listitem", { name: "신관 직원식당" })
-    expect(within(nw).getByText(/걸어서 4분/)).toHaveTextContent("추정")
-    expect(
-      within(screen.getByRole("listitem", { name: "동관 직원식당" })).getByText(
-        /걸어서 7분/
-      )
-    ).toBeInTheDocument()
-    // 도시락 줄에는 도보 표기를 붙이지 않는다
-    expect(
-      within(
-        screen.getByRole("listitem", { name: "간편식 도시락" })
-      ).queryByText(/걸어서/)
-    ).toBeNull()
-    expect(
-      screen.getByRole("button", { name: "근무 건물: 서관" })
-    ).toBeInTheDocument()
-  })
-
-  it("clears the work building back to the default rule", async () => {
-    const user = userEvent.setup()
+  it("ignores a stored work building", () => {
     localStorage.setItem("babttae.workBuilding", '"west"')
     renderAt("2026-10-14T12:20", <Home />)
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "지금 출발하면 신관이 가장 빨라요"
-    )
-    await user.click(screen.getByRole("button", { name: "근무 건물: 서관" }))
-    const sheet = screen.getByRole("dialog", { name: "근무 건물" })
-    expect(within(sheet).getByRole("button", { name: "서관" })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    )
-    await user.click(within(sheet).getByRole("button", { name: "설정 지우기" }))
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "지금은 신관이 바로 드실 수 있어요"
     )
-    expect(
-      screen.getByRole("button", { name: "근무 건물: 미설정" })
-    ).toBeInTheDocument()
     expect(screen.queryByText(/걸어서/)).toBeNull()
+    expect(screen.queryByText(/근무 건물/)).toBeNull()
+    expect(screen.queryByText(/도보/)).toBeNull()
+  })
+
+  it("hall rows show no walking time", () => {
+    renderAt("2026-10-14T12:20", <Home />)
+    for (const name of ["동관 직원식당", "서관 직원식당", "신관 직원식당"]) {
+      expect(
+        within(screen.getByRole("listitem", { name })).queryByText(/걸어서/)
+      ).toBeNull()
+    }
   })
 
   it("opens the east detail sheet from its row with pattern and map link", async () => {
@@ -216,20 +172,16 @@ describe("Home", () => {
       "href",
       "/map?venue=east"
     )
-    // 근무 건물을 정하지 않았으면 도보 줄이 없다
-    expect(within(sheet).queryByText(/걸어서/)).toBeNull()
     expect(within(sheet).getByText(/모의 데이터/)).toBeInTheDocument()
   })
 
-  it("opens the row sheet from the keyboard and shows walk time when set", async () => {
+  it("opens the row sheet from the keyboard", async () => {
     const user = userEvent.setup()
-    localStorage.setItem("babttae.workBuilding", '"west"')
     renderAt("2026-10-14T12:20", <Home />)
     const nw = within(screen.getByRole("listitem", { name: "신관 직원식당" }))
     nw.getByRole("button", { name: "신관 직원식당" }).focus()
     await user.keyboard("{Enter}")
     const sheet = screen.getByRole("dialog", { name: "신관 직원식당" })
-    expect(within(sheet).getByText("근무 건물에서 걸어서 4분(추정)")).toBeInTheDocument()
     const table = within(sheet).getByRole("table", {
       name: "신관 직원식당 평소 혼잡 패턴",
     })
@@ -259,17 +211,6 @@ describe("Home", () => {
     ).toBeInTheDocument()
   })
 
-  it("shows no building tile in the hero when nothing is reachable before closing", () => {
-    localStorage.setItem("babttae.workBuilding", '"asanLife"')
-    renderAt("2026-10-14T14:55", <Home />)
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "지금 출발하면 마감 전에 도착하기 어려워요"
-    )
-    const hero = screen.getByRole("heading", { level: 1 }).closest("section")!
-    expect(hero.querySelector("[data-slot=building-tile]")).toBeNull()
-    expect(hero.querySelector("[data-slot=hero-tiles]")).toBeNull()
-  })
-
   it("raises the small forecast bars above the row-wide click target only on hover devices", () => {
     renderAt("2026-10-14T12:20", <Home />)
     const east = screen.getByRole("listitem", { name: "동관 직원식당" })
@@ -281,21 +222,6 @@ describe("Home", () => {
       "[@media(hover:hover)]:z-10"
     )
     expect(bars).not.toHaveClass("z-10")
-  })
-
-  it("hides the walk time on halls that do not serve today", () => {
-    localStorage.setItem("babttae.workBuilding", '"west"')
-    renderAt("2026-10-17T12:20", <Home />)
-    for (const name of ["서관 직원식당", "신관 직원식당"]) {
-      const row = screen.getByRole("listitem", { name })
-      expect(within(row).getByText("주말 휴무")).toBeInTheDocument()
-      expect(within(row).queryByText(/걸어서/)).toBeNull()
-    }
-    expect(
-      within(screen.getByRole("listitem", { name: "동관 직원식당" })).getByText(
-        "걸어서 7분(추정)"
-      )
-    ).toBeInTheDocument()
   })
 
   it("has a single h1", () => {

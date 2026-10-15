@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from "react"
 import { Link } from "react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Location01Icon, WalkingIcon } from "@hugeicons/core-free-icons"
+import { Location01Icon } from "@hugeicons/core-free-icons"
 
 import { ForecastBars } from "@/components/common/ForecastBars"
 import { PatternGrid } from "@/components/common/PatternGrid"
@@ -18,7 +18,6 @@ import {
 import { VENUES } from "@/data/restaurants"
 import type { DiningHallId, MealKey } from "@/domain/types"
 import { useClock } from "@/hooks/useClock"
-import { usePrefs } from "@/hooks/usePrefs"
 import { useVenueStatus } from "@/hooks/useVenueStatus"
 import { seoulWeekdayIndex, seoulWeekdayTime } from "@/lib/format"
 import {
@@ -36,7 +35,6 @@ import {
   recommendTime,
 } from "@/lib/recommend"
 import { cn } from "@/lib/utils"
-import { walkMinutes } from "@/lib/walk"
 
 const MEALS: MealKey[] = ["breakfast", "lunch", "dinner", "mobile", "lateNight"]
 const DAY_MS = 86_400_000
@@ -136,7 +134,6 @@ function TodayForecast({ hall }: { hall: DiningHallId }) {
 
 function DetailBody({ hall }: { hall: DiningHallId }) {
   const { now } = useClock()
-  const { workBuilding } = usePrefs()
   const venue = VENUES[hall]
   const rows = useMemo(() => weeklyPattern(hall, PATTERN_MEAL), [hall])
   const focus = focusMeal(hall, now)
@@ -175,18 +172,6 @@ function DetailBody({ hall }: { hall: DiningHallId }) {
               {venue.directions}
             </span>
           </p>
-          {workBuilding && (
-            <p className="flex items-start gap-2">
-              <HugeiconsIcon
-                icon={WalkingIcon}
-                aria-hidden
-                className="mt-px size-4 shrink-0 text-muted-foreground"
-              />
-              <span className="tabular-nums">
-                {`근무 건물에서 걸어서 ${walkMinutes(workBuilding, hall)}분(추정)`}
-              </span>
-            </p>
-          )}
         </div>
         <Link
           to={`/map?venue=${hall}`}
