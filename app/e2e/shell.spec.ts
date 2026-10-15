@@ -48,9 +48,7 @@ test("demo sheet opens the ops screen and keeps ?at=", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 2 })).toHaveCount(5)
 })
 
-test("ops screen has no horizontal overflow in dark mode", async ({
-  page,
-}) => {
+test("ops screen has no horizontal overflow in dark mode", async ({ page }) => {
   await page.addInitScript(() =>
     localStorage.setItem("babttae.theme", JSON.stringify("dark"))
   )
@@ -78,7 +76,15 @@ test("no console errors on any route", async ({ page }) => {
     if (m.type() === "error") errors.push(m.text())
   })
   page.on("pageerror", (e) => errors.push(e.message))
-  for (const path of ["/", "/menu", "/map", "/alerts", "/staff", "/ops"]) {
+  for (const path of [
+    "/",
+    "/menu",
+    "/map",
+    "/alerts",
+    "/staff",
+    "/ops",
+    "/ops/accuracy",
+  ]) {
     await page.goto(`${path}?at=2026-10-14T12:20`)
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
   }

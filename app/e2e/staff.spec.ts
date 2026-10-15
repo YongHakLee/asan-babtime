@@ -121,3 +121,33 @@ test("big buttons are at least 96px tall", async ({ page }) => {
     expect(box!.height).toBeGreaterThanOrEqual(96)
   }
 })
+
+test("staff input clears the missing mark on ops", async ({ context }) => {
+  const ops = await context.newPage()
+  const staff = await context.newPage()
+  await ops.goto(`/ops?at=${AT}`)
+  await staff.goto(`/staff?at=${AT}`)
+  const row = ops
+    .locator("li", {
+      has: ops.getByText("동관", { exact: true }),
+    })
+    .first()
+  await expect(row).toContainText("직원 입력 누락")
+  await staff.getByRole("button", { name: "혼잡" }).click()
+  await expect(row).toContainText("직원 입력: 혼잡", { timeout: 3000 })
+  await staff.getByRole("button", { name: "입력 취소" }).click()
+  await expect(row).toContainText("직원 입력 누락, 오늘 입력 없음", {
+    timeout: 3000,
+  })
+})
+
+test("accuracy page renders KPI and bars", async ({ page }) => {
+  await page.goto(`/ops/accuracy?at=${AT}`)
+  await expect(page.getByText("등급 일치율").first()).toBeVisible()
+  const bars = page.locator('[data-slot="accuracy-bars"] button')
+  expect(await bars.count()).toBeGreaterThanOrEqual(1)
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth)
+  ).toBeLessThanOrEqual(390)
+})
