@@ -1,36 +1,71 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { t } from '@/test/time'
 import {
-  getActiveOverride,
+  addStaffEntry,
+  allStaffEntries,
+  cancelStaffEntry,
+  entryRemainingMs,
+  getActiveEntry,
   isSoldOut,
-  overrideRemainingMs,
-  setOverride,
+  lastEntryOn,
   setSoldOut,
+  staffEntriesOn,
   subscribeOverrides,
 } from '@/lib/override'
 import { getSubscriptions } from '@/lib/prefs'
 
-describe('overrides', () => {
+describe('staff log', () => {
   afterEach(() => vi.useRealTimers())
-
-  it('override expires after 15 real minutes, whatever the demo clock says', () => {
+  beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-10-20T01:00:00Z'))
-    setOverride('east', 'queue', t('2026-10-14T12:00'))
-    const o = getActiveOverride('east')
-    expect(o?.kind).toBe('queue')
-    expect(o?.at).toBe(t('2026-10-14T12:00').getTime())
-    expect(o?.realAt).toBe(Date.now())
-    vi.setSystemTime(new Date('2026-10-20T01:14:59Z'))
-    expect(getActiveOverride('east')?.kind).toBe('queue')
-    expect(overrideRemainingMs(getActiveOverride('east')!)).toBe(1000)
-    vi.setSystemTime(new Date('2026-10-20T01:15:00Z'))
-    expect(getActiveOverride('east')).toBeNull()
   })
-  it('an override stored without realAt (old format) is inactive', () => {
-    localStorage.setItem('babttae.overrides', JSON.stringify({ east: { hall: 'east', kind: 'queue', at: Date.now() } }))
-    expect(getActiveOverride('east')).toBeNull()
+
+  it('entry expires after 15 real minutes, whatever the demo clock says', () => {
+    const e = addStaffEntry('east', 'busy', t('2026-10-14T12:18'))
+    expect(e.at).toBe(t('2026-10-14T12:18').getTime())
+    expect(getActiveEntry('east')?.level).toBe('busy')
+    vi.setSystemTime(new Date('2026-10-20T01:14:59Z'))
+    expect(entryRemainingMs(getActiveEntry('east')!)).toBe(1000)
+    vi.setSystemTime(new Date('2026-10-20T01:15:00Z'))
+    expect(getActiveEntry('east')).toBeNull()
+  })
+  it('stores the model prediction at the moment of input', () => {
+    // 2026-10-14 12:20 동관은 모델이 '혼잡'(약 16분)으로 본다 (v2 보정 목표)
+    const e = addStaffEntry('east', 'queue', t('2026-10-14T12:20'))
+    expect(e.model.level).toBe('busy')
+    expect(e.model.waitMinutes).toBeGreaterThanOrEqual(10)
+  })
+  it('records ok/0 as the model outside service', () => {
+    expect(addStaffEntry('west', 'busy', t('2026-10-14T15:30')).model).toEqual({ level: 'ok', waitMinutes: 0 })
+  })
+  it('cancelling the last entry returns to the model, not to the previous entry', () => {
+    const first = addStaffEntry('east', 'queue', t('2026-10-14T12:10'))
+    const second = addStaffEntry('east', 'busy', t('2026-10-14T12:12'))
+    cancelStaffEntry(second.id)
+    expect(getActiveEntry('east')).toBeNull()
+    expect(lastEntryOn('east', '2026-10-14')?.id).toBe(first.id)
+    expect(staffEntriesOn('2026-10-14')).toHaveLength(2)
+  })
+  it('drops entries older than 48 real hours when saving', () => {
+    addStaffEntry('east', 'ok', t('2026-10-14T12:00'))
+    vi.setSystemTime(new Date('2026-10-22T01:00:01Z'))
+    addStaffEntry('west', 'ok', t('2026-10-14T12:00'))
+    expect(allStaffEntries().map((e) => e.hall)).toEqual(['west'])
+  })
+  it('ignores malformed staffLog entries and the old overrides key', () => {
+    const now = Date.now()
+    localStorage.setItem('babttae.overrides', JSON.stringify({ east: { hall: 'east', kind: 'queue', at: now, realAt: now } }))
+    expect(getActiveEntry('east')).toBeNull()
+    localStorage.setItem('babttae.staffLog', JSON.stringify({ not: 'an array' }))
+    expect(allStaffEntries()).toEqual([])
+    localStorage.setItem('babttae.staffLog', JSON.stringify([
+      { id: 'a', hall: 'westNew', level: 'busy', at: now, realAt: now, model: { level: 'ok', waitMinutes: 0 } },
+      { id: 'b', hall: 'east', level: 'jammed', at: now, realAt: now, model: { level: 'ok', waitMinutes: 0 } },
+      { id: 'c', hall: 'east', level: 'busy', at: now, realAt: now },
+    ]))
+    expect(allStaffEntries()).toEqual([])
   })
   it('sold out is per date', () => {
     setSoldOut({ hall: 'east', meal: 'dinner', course: 'B', date: '2026-10-14' }, true)
@@ -42,15 +77,15 @@ describe('overrides', () => {
 })
 
 describe('subscribeOverrides storage events', () => {
-  it('reacts only to the override and sold-out keys', () => {
+  it('reacts only to the staff log and sold-out keys', () => {
     const fn = vi.fn()
     const off = subscribeOverrides(fn)
     try {
-      for (const key of ['babttae.alerts.sent', 'babttae.theme', 'babttae.favorites', 'other']) {
+      for (const key of ['babttae.alerts.sent', 'babttae.theme', 'babttae.favorites', 'babttae.overrides', 'other']) {
         window.dispatchEvent(new StorageEvent('storage', { key }))
       }
       expect(fn).not.toHaveBeenCalled()
-      window.dispatchEvent(new StorageEvent('storage', { key: 'babttae.overrides' }))
+      window.dispatchEvent(new StorageEvent('storage', { key: 'babttae.staffLog' }))
       window.dispatchEvent(new StorageEvent('storage', { key: 'babttae.soldout' }))
       expect(fn).toHaveBeenCalledTimes(2)
     } finally {
@@ -66,22 +101,9 @@ describe('legacy westNew values', () => {
       JSON.stringify({ queueCleared: ['westNew', 'east'], favoriteDay: false, boxLunchDeadline: false, closingSoon: false }),
     )
     expect(getSubscriptions().queueCleared).toEqual(['east'])
-    const now = Date.now()
-    localStorage.setItem('babttae.overrides', JSON.stringify({ westNew: { hall: 'westNew', kind: 'queue', at: now, realAt: now } }))
-    expect(() => getActiveOverride('west')).not.toThrow()
-    expect(getActiveOverride('west')).toBeNull()
-    expect(getActiveOverride('new')).toBeNull()
-    // 예전 형식이 배열이어도 오류 없이 무시한다
-    localStorage.setItem('babttae.overrides', JSON.stringify([{ hall: 'westNew', kind: 'queue', at: now, realAt: now }]))
-    expect(getActiveOverride('west')).toBeNull()
-    // 다른 식당 키 아래 엉뚱한 hall이 저장돼 있으면 쓰지 않는다
-    localStorage.setItem('babttae.overrides', JSON.stringify({ west: { hall: 'westNew', kind: 'queue', at: now, realAt: now } }))
-    expect(getActiveOverride('west')).toBeNull()
     localStorage.setItem('babttae.soldout', JSON.stringify([{ hall: 'westNew', meal: 'lunch', date: '2026-10-14' }]))
     expect(isSoldOut('west', 'lunch', undefined, t('2026-10-14T12:20'))).toBe(false)
     setSoldOut({ hall: 'west', meal: 'lunch', date: '2026-10-14' }, true)
     expect(JSON.parse(localStorage.getItem('babttae.soldout')!)).toEqual([{ hall: 'west', meal: 'lunch', date: '2026-10-14' }])
-    setOverride('new', 'clear', t('2026-10-14T12:20'))
-    expect(Object.keys(JSON.parse(localStorage.getItem('babttae.overrides')!))).toEqual(['new'])
   })
 })

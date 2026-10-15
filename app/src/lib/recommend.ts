@@ -2,7 +2,7 @@ import { DINING_HALLS as HALLS, VENUES } from '@/data/restaurants'
 import type { BuildingId, DiningHallId, MealKey, Venue } from '@/domain/types'
 import { getActiveMeal, getNextService, getServiceStatus } from '@/lib/hours'
 import { dayPopularity, getCourses, summary } from '@/lib/menu'
-import { getActiveOverride, overrideRemainingMs } from '@/lib/override'
+import { entryRemainingMs, getActiveEntry } from '@/lib/override'
 import { simulateQueue } from '@/lib/queue'
 import { effectiveWait } from '@/lib/status'
 import { fastestHall } from '@/lib/walk'
@@ -52,11 +52,11 @@ export function forecast(
 export function recommendTime(hall: DiningHallId, meal: MealKey, at: Date): Date | null {
   const w = windowOf(hall, meal, at)
   if (!w) return null
-  const o = getActiveOverride(hall)
-  if (o?.kind === 'clear') return at
-  // 직원이 '줄 있음'으로 표시했으면 그 표시가 만료되기 전에는 한산하다고 하지 않는다.
+  const e = getActiveEntry(hall)
+  // 직원 입력이 있으면 지금은 범위에 맞춘 대기로 판단한다. 3분 미만이면 지금, 아니면 입력이 만료된 뒤부터 모델로 찾는다.
   // 유효 시간은 실제 시계로 재므로, 시연 시각으로는 at + (TTL - 실제 경과)에 끝난다.
-  const earliest = o?.kind === 'queue' ? at.getTime() + overrideRemainingMs(o) : 0
+  if (e && effectiveWait(hall, meal, at).waitMinutes < 3) return at
+  const earliest = e ? at.getTime() + entryRemainingMs(e) : 0
   for (let ms = Math.max(at.getTime(), w.start.getTime(), earliest); ms < w.end.getTime(); ms += 5 * MIN) {
     if (waitAt(hall, meal, w.start, new Date(ms)) < 3) return new Date(ms)
   }

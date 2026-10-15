@@ -17,7 +17,7 @@ import {
   todayArrivals,
   tomorrowPrep,
 } from "@/lib/ops"
-import { getActiveOverride, subscribeOverrides } from "@/lib/override"
+import { getActiveEntry, subscribeOverrides } from "@/lib/override"
 import { subscribePrefs } from "@/lib/prefs"
 import { LEVEL_LABEL } from "@/lib/queue"
 import { MEAL_LABEL } from "@/lib/recommend"
@@ -82,10 +82,10 @@ function HallLine({
 function NowRow({ hall }: { hall: DiningHallId }) {
   const { now } = useClock()
   const { meal, status, level, waitMinutes, source } = useVenueStatus(hall)
-  const o = getActiveOverride(hall)
+  const o = getActiveEntry(hall)
   const staff =
     source === "staff" && o
-      ? `직원 입력: ${LEVEL_LABEL[o.kind === "queue" ? "queue" : "ok"]}, ${hm(new Date(o.at))}`
+      ? `직원 입력: ${LEVEL_LABEL[o.level]}, ${hm(new Date(o.at))}`
       : "직원 입력 없음"
 
   if (meal && status?.kind === "open") {

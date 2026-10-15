@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
-import { setSoldOut } from "@/lib/override"
+import { addStaffEntry, setSoldOut } from "@/lib/override"
 import OpsPage from "@/pages/Ops"
 import { renderAt } from "@/test/render"
 import { t } from "@/test/time"
@@ -57,17 +57,7 @@ describe("OpsPage", () => {
   })
 
   it("shows staff input on its own line", () => {
-    localStorage.setItem(
-      "babttae.overrides",
-      JSON.stringify({
-        east: {
-          hall: "east",
-          kind: "queue",
-          at: t("2026-10-14T12:10").getTime(),
-          realAt: Date.now(),
-        },
-      })
-    )
+    addStaffEntry("east", "queue", t("2026-10-14T12:10"))
     renderAt("2026-10-14T12:20", <OpsPage />)
     const now = screen.getByRole("region", { name: "지금 상황" })
     expect(within(now).getByText("직원 입력: 줄 있음, 12:10")).toBeInTheDocument()

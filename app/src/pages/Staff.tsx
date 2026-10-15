@@ -25,18 +25,20 @@ import {
 import { cn } from "@/lib/utils"
 import { getCourses } from "@/lib/menu"
 import {
-  getActiveOverride,
+  addStaffEntry,
+  entryRemainingMs,
+  getActiveEntry,
   isSoldOut,
-  overrideRemainingMs,
-  setOverride,
   setSoldOut,
   subscribeOverrides,
-  type OverrideKind,
 } from "@/lib/override"
+import { LEVEL_LABEL } from "@/lib/queue"
 import { MEAL_LABEL } from "@/lib/recommend"
 
+type ButtonKind = "queue" | "clear"
+
 const BUTTONS: {
-  kind: OverrideKind
+  kind: ButtonKind
   label: string
   hint: string
   pressed: string
@@ -57,12 +59,7 @@ const BUTTONS: {
   },
 ]
 
-const KIND_LABEL: Record<OverrideKind, string> = {
-  queue: "줄 있음",
-  clear: "여유",
-}
-
-const DOT: Record<OverrideKind, string> = {
+const DOT: Record<ButtonKind, string> = {
   queue: "text-status-queue",
   clear: "text-status-ok",
 }
@@ -73,8 +70,8 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
   useEffect(() => subscribeOverrides(bump), [])
 
   // now는 시계가 흐를 때 다시 그리기 위한 값이다. 남은 시간은 실제 시계로 잰다
-  const active = getActiveOverride(hall)
-  const left = active ? Math.ceil(overrideRemainingMs(active) / 60_000) : 0
+  const active = getActiveEntry(hall)
+  const left = active ? Math.ceil(entryRemainingMs(active) / 60_000) : 0
 
   return (
     <section aria-labelledby="entrance-title" className="flex flex-col gap-3">
@@ -83,14 +80,15 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
       </h2>
       <div className="grid grid-cols-2 gap-3">
         {BUTTONS.map((b) => {
-          const pressed = active?.kind === b.kind
+          const level = b.kind === "queue" ? "queue" : "ok"
+          const pressed = active?.level === level
           return (
             <Button
               key={b.kind}
               type="button"
               variant="outline"
               aria-pressed={pressed}
-              onClick={() => setOverride(hall, b.kind, now)}
+              onClick={() => addStaffEntry(hall, level, now)}
               className={cn(
                 "relative h-28 flex-col gap-1 rounded-3xl border-2 px-2 py-3",
                 b.pressed
@@ -119,7 +117,7 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
       </div>
       {/* 입력하거나 풀릴 때만 읽어 준다. 매분 바뀌는 남은 시간은 라이브 영역 밖에 둔다 */}
       <p role="status" className="sr-only">
-        {active ? `${KIND_LABEL[active.kind]} 입력됨` : ""}
+        {active ? `${LEVEL_LABEL[active.level]} 입력됨` : ""}
       </p>
       <p className="text-sm text-muted-foreground">
         {active
