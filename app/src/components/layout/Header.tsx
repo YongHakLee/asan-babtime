@@ -31,7 +31,14 @@ export function Header() {
   return (
     <header className="bg-deep px-4 text-deep-foreground">
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 py-3">
-        <p className="text-base font-semibold">밥타임</p>
+        <p className="relative text-base font-semibold">
+          밥타임
+          <span
+            aria-hidden="true"
+            data-slot="brand-mark"
+            className="absolute -bottom-0.5 left-0 h-[3px] w-4 rounded-full bg-brand-orange"
+          />
+        </p>
 
         <nav aria-label="주요 메뉴" className="hidden md:block">
           <ul className="flex gap-1">
@@ -42,14 +49,25 @@ export function Header() {
                   end={to === "/"}
                   className={({ isActive }) =>
                     cn(
-                      "flex h-11 items-center rounded-4xl px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-deep-foreground",
+                      "relative flex h-11 items-center rounded-4xl px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-deep-foreground",
                       isActive
                         ? "bg-deep-foreground/15 font-semibold"
                         : "opacity-80 hover:opacity-100"
                     )
                   }
                 >
-                  {label}
+                  {({ isActive }) => (
+                    <>
+                      {label}
+                      {isActive && (
+                        <span
+                          aria-hidden="true"
+                          data-slot="active-mark"
+                          className="absolute bottom-1.5 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-brand-orange"
+                        />
+                      )}
+                    </>
+                  )}
                 </NavLink>
               </li>
             ))}

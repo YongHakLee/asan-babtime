@@ -69,6 +69,17 @@ h2 {
   letter-spacing: -0.01em;
   border-bottom: 1.5px solid var(--deep);
   break-before: page;
+  position: relative;
+}
+/* 장 제목 밑줄 왼쪽 끝을 표지 선과 같은 오렌지로 */
+h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1.5px;
+  width: 14mm;
+  height: 1.5px;
+  background: var(--brand-orange);
 }
 .doc > h2:first-child { break-before: auto; }
 h3 { margin: 9mm 0 3mm; font-size: 13.5pt; font-weight: 700; line-height: 1.45; }

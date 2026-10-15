@@ -18,15 +18,30 @@ export function TabBar() {
               end={to === "/"}
               className={({ isActive }) =>
                 cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+                  "relative flex min-h-14 flex-col items-center justify-center gap-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
                   isActive
                     ? "font-semibold text-primary"
                     : "text-muted-foreground"
                 )
               }
             >
-              <HugeiconsIcon icon={icon} className="size-5" strokeWidth={2} />
-              {label}
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span
+                      aria-hidden="true"
+                      data-slot="active-mark"
+                      className="absolute top-0 left-1/2 h-[3px] w-6 -translate-x-1/2 rounded-b-full bg-brand-orange"
+                    />
+                  )}
+                  <HugeiconsIcon
+                    icon={icon}
+                    className="size-5"
+                    strokeWidth={2}
+                  />
+                  {label}
+                </>
+              )}
             </NavLink>
           </li>
         ))}

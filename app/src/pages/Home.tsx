@@ -275,9 +275,14 @@ export default function HomePage() {
               ))}
             </div>
           )}
+          <span
+            aria-hidden="true"
+            data-slot="headline-mark"
+            className="mt-5 block h-[3px] w-6 rounded-full bg-brand-orange lg:mt-7"
+          />
           <h1
             id="home-title"
-            className="mt-5 text-[1.5625rem] leading-[1.28] font-bold tracking-[-0.035em] text-balance lg:mt-7 lg:text-[2.375rem] lg:leading-[1.2]"
+            className="mt-3 text-[1.5625rem] leading-[1.28] font-bold tracking-[-0.035em] text-balance lg:mt-4 lg:text-[2.375rem] lg:leading-[1.2]"
           >
             {title}
           </h1>
