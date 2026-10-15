@@ -88,11 +88,13 @@ test("busy input shows busy on home and cancel restores the model", async ({
   await expect(row).toContainText("줄 있음", { timeout: 3000 })
   await staff.getByRole("button", { name: "혼잡" }).click()
   await expect(row).toContainText("혼잡", { timeout: 3000 })
+  // 모델(혼잡)과 다른 값을 마지막으로 입력해야 취소가 홈에서 눈에 보인다
+  await staff.getByRole("button", { name: "여유" }).click()
+  await expect(row).toContainText("여유", { timeout: 3000 })
   await staff.getByRole("button", { name: "입력 취소" }).click()
   await expect(staff.getByText(/입력을 취소했어요/)).toBeVisible()
-  // 12:20 동관은 모델이 '혼잡'으로 본다
   await expect(row).toContainText("혼잡", { timeout: 3000 })
-  await expect(row).not.toContainText("줄 있음")
+  await expect(row).not.toContainText("여유")
 })
 
 test("reopening ?at= starts at the given time again", async ({ page }) => {

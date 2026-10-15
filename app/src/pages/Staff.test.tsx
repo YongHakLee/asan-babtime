@@ -215,4 +215,24 @@ describe("Staff entrance input", () => {
     await pickHall("서관")
     expect(screen.queryByText(/입력을 취소했어요/)).toBeNull()
   })
+
+  it("compares against the stored model, not a fresh prediction", () => {
+    localStorage.setItem(
+      "babttae.staffLog",
+      JSON.stringify([
+        {
+          id: "seed",
+          hall: "east",
+          level: "busy",
+          at: t("2026-10-14T12:20").getTime(),
+          realAt: Date.now(),
+          model: { level: "ok", waitMinutes: 0 },
+        },
+      ])
+    )
+    renderAt("2026-10-14T12:20", <StaffPage />)
+    expect(
+      screen.getByText("모델은 여유(대기 없음)로 봤어요")
+    ).toBeInTheDocument()
+  })
 })
