@@ -41,6 +41,7 @@
   --color-deep-foreground: var(--deep-foreground);
   --color-deep-muted: var(--deep-muted);
   --color-brand-orange: var(--brand-orange);
+  --color-brand-orange-foreground: var(--brand-orange-foreground);
   --color-status-ok: var(--status-ok);
   --color-status-mid: var(--status-mid);
   --color-status-queue: var(--status-queue);

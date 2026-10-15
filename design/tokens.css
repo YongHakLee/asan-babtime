@@ -18,6 +18,8 @@
   --accent: #e2efee;
   --border: #d6e6e4;
   --brand-orange: #f18d00;
+  /* 오렌지 면 위 글자. 오렌지는 글자색으로 쓰지 않고 면으로만 쓴다(대비 5.75) */
+  --brand-orange-foreground: #10302f;
 
   --status-ok: #127a4b;
   --status-mid: #8a5b00;
@@ -54,6 +56,7 @@
   --accent: #283030;
   --border: #353d3c;
   --brand-orange: #e9a23b;
+  --brand-orange-foreground: #10302e; /* 대비 6.53 */
 
   --status-ok: #8bcfa6;
   --status-mid: #dcc27e;

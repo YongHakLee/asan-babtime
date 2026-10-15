@@ -91,7 +91,7 @@ function Row({
 }: {
   name: string
   glyph: BuildingGlyph
-  tone?: "solid" | "soft"
+  tone?: "solid" | "soft" | "pick"
   menu: string
   status: ReactNode
   extra?: ReactNode
@@ -140,9 +140,12 @@ function Row({
 
 function HallRow({
   hall,
+  picked,
   onOpen,
 }: {
   hall: DiningHallId
+  /** 홈 결론이 고른 식당이면 타일을 위 타일과 같은 오렌지로 */
+  picked: boolean
   onOpen: () => void
 }) {
   const { now } = useClock()
@@ -155,6 +158,7 @@ function HallRow({
       <Row
         name={venue.name}
         glyph={venue.short}
+        tone={picked ? "pick" : undefined}
         onOpen={onOpen}
         menu={summary(getCourses(status.opensAt, hall, meal))}
         status={<StatusText level={level} waitMinutes={waitMinutes} />}
@@ -251,7 +255,7 @@ function stripFor(now: Date): { meal: MealKey; status: ServiceStatus } | null {
 
 export default function HomePage() {
   const { now } = useClock()
-  const { title, detail, tiles } = homeHeadline(now)
+  const { title, detail, tiles, pick } = homeHeadline(now)
   const strip = stripFor(now)
   const [sheetHall, setSheetHall] = useState<DiningHallId>("east")
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -269,20 +273,15 @@ export default function HomePage() {
                 <BuildingTile
                   key={g}
                   glyph={g}
-                  tone="inverse"
+                  tone={pick ? "pick" : "inverse"}
                   className="size-[1.875rem] rounded-[7px] text-[0.9375rem] lg:size-10 lg:text-lg"
                 />
               ))}
             </div>
           )}
-          <span
-            aria-hidden="true"
-            data-slot="headline-mark"
-            className="mt-5 block h-[3px] w-6 rounded-full bg-brand-orange lg:mt-7"
-          />
           <h1
             id="home-title"
-            className="mt-3 text-[1.5625rem] leading-[1.28] font-bold tracking-[-0.035em] text-balance lg:mt-4 lg:text-[2.375rem] lg:leading-[1.2]"
+            className="mt-5 text-[1.5625rem] leading-[1.28] font-bold tracking-[-0.035em] text-balance lg:mt-7 lg:text-[2.375rem] lg:leading-[1.2]"
           >
             {title}
           </h1>
@@ -305,6 +304,7 @@ export default function HomePage() {
               {i > 0 && <Separator />}
               <HallRow
                 hall={hall}
+                picked={hall === pick}
                 onOpen={() => {
                   setSheetHall(hall)
                   setSheetOpen(true)
