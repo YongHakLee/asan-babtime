@@ -1,11 +1,10 @@
 import { DINING_HALLS as HALLS, VENUES } from '@/data/restaurants'
-import type { BuildingId, DiningHallId, MealKey, Venue } from '@/domain/types'
+import type { DiningHallId, MealKey, Venue } from '@/domain/types'
 import { getActiveMeal, getNextService, getServiceStatus } from '@/lib/hours'
 import { dayPopularity, getCourses, summary } from '@/lib/menu'
 import { entryRemainingMs, getActiveEntry } from '@/lib/override'
 import { simulateQueue } from '@/lib/queue'
 import { effectiveWait } from '@/lib/status'
-import { fastestHall } from '@/lib/walk'
 
 const MIN = 60_000
 export const MEAL_LABEL: Record<MealKey, string> = {
@@ -104,29 +103,7 @@ function nextService(at: Date): { meal: MealKey; opensAt: Date } | null {
 const nextServiceLine = (n: { meal: MealKey; opensAt: Date }) =>
   `다음 배식은 ${MEAL_LABEL[n.meal]} ${clock(n.opensAt)}부터예요`
 
-export function homeHeadline(
-  at: Date,
-  from?: BuildingId | null,
-): { title: string; detail: string | null; tiles: Tile[] } {
-  // 근무 건물이 있으면 도보 + 도착 시 대기로 고른다. 도착 시 연 식당이 없으면 기존 규칙으로.
-  const fast = from ? fastestHall(at, from) : null
-  if (fast) {
-    const v = VENUES[fast.hall]
-    const untilOpen = Math.round(fast.untilOpen)
-    let detail: string
-    if (untilOpen > 0) {
-      // 도착한 뒤에 배식을 시작한다: 시작 시각과 남은 시간을 말하고, 시작 직후 줄이 있으면 덧붙인다
-      const queue = Math.round(fast.queueWait)
-      detail = `걸어서 ${fast.walk}분, ${clock(fast.ready)} 배식 시작까지 ${untilOpen}분`
-      if (fast.queueWait >= 2) detail += ` (시작 직후 약 ${queue}분 대기)`
-    } else {
-      const arrival =
-        fast.waitOnArrival < 2 ? '바로 드실 수 있어요' : `약 ${Math.round(fast.waitOnArrival)}분 기다려요`
-      detail = `걸어서 ${fast.walk}분, 도착하면 ${arrival}`
-    }
-    return { title: `지금 출발하면 ${v.label}이 가장 빨라요`, detail, tiles: [v.short] }
-  }
-
+export function homeHeadline(at: Date): { title: string; detail: string | null; tiles: Tile[] } {
   const open = HALLS.flatMap((hall) => {
     const meal = getActiveMeal(hall, at)
     if (!meal || getServiceStatus(hall, meal, at).kind !== 'open') return []
@@ -139,16 +116,6 @@ export function homeHeadline(
     const dishes = summary(getCourses(next.opensAt, 'east', next.meal))
     const detail = dishes ? `${MEAL_LABEL[next.meal]} 메뉴: ${dishes}` : null
     return { title: nextServiceLine(next), detail, tiles: ['동'] }
-  }
-
-  // 근무 건물에서 걸어가면 모두 마감 뒤에 도착한다: 대기만 보고 권하지 않는다
-  if (from) {
-    const next = nextService(at)
-    return {
-      title: '지금 출발하면 마감 전에 도착하기 어려워요',
-      detail: next ? nextServiceLine(next) : null,
-      tiles: [],
-    }
   }
 
   const best = open.reduce((a, b) => (b.wait < a.wait ? b : a))

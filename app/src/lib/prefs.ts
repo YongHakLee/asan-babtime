@@ -1,6 +1,5 @@
-import { BUILDINGS } from '@/data/buildings'
 import { DINING_HALLS } from '@/data/restaurants'
-import type { BuildingId, DiningHallId } from '@/domain/types'
+import type { DiningHallId } from '@/domain/types'
 import { storage } from '@/lib/storage'
 
 export interface Subscriptions {
@@ -55,17 +54,6 @@ export function getSubscriptions(): Subscriptions {
 
 export function setSubscriptions(s: Subscriptions): void {
   storage.set('subscriptions', s)
-  emit()
-}
-
-/** 근무 건물. 저장된 값이 지금 건물 목록에 없으면 미설정으로 본다. */
-export function getWorkBuilding(): BuildingId | null {
-  const b = storage.get<unknown>('workBuilding', null)
-  return typeof b === 'string' && Object.hasOwn(BUILDINGS, b) ? (b as BuildingId) : null
-}
-
-export function setWorkBuilding(b: BuildingId | null): void {
-  storage.set('workBuilding', b)
   emit()
 }
 

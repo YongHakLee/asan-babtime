@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react"
+import { useEffect, useReducer, useRef, useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
 
@@ -13,7 +13,6 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { DINING_HALLS as HALLS, VENUES } from "@/data/restaurants"
-import { waitText } from "@/components/common/StatusText"
 import type { DiningHallId, MealKey } from "@/domain/types"
 import { useClock } from "@/hooks/useClock"
 import { formatMinutes, seoulMinutes } from "@/lib/format"
@@ -31,6 +30,7 @@ import {
   entryRemainingMs,
   getActiveEntry,
   isSoldOut,
+  OVERRIDE_TTL_MS,
   setSoldOut,
   subscribeOverrides,
 } from "@/lib/override"
@@ -87,28 +87,47 @@ const PARTICLE: Record<CongestionLevel, string> = {
   busy: "으로",
 }
 
-/** 비교 문장의 대기 분: 4.6분이 "약 5분"으로 올라가 직원 등급(2–5분)과 어긋나 보이지 않게 내림한다. */
-function compareWait(waitMinutes: number): string {
-  return waitText(waitMinutes < 1 ? 0 : Math.floor(waitMinutes))
-}
-
 function EntranceInput({ hall }: { hall: DiningHallId }) {
   const { now } = useClock()
   const [, bump] = useReducer((n: number) => n + 1, 0)
   useEffect(() => subscribeOverrides(bump), [])
-  // 방금 취소한 식당. 식당을 바꾸면 key로 다시 만들어 지워지고,  새로 입력해도 지운다
-  const [cancelledHall, setCancelledHall] = useState<DiningHallId | null>(null)
+  // 스크린리더에 읽어 줄 마지막 문구. key가 바뀌면 새 글자 노드가 되어 다시 읽는다.
+  // 만료로 풀릴 때는 바꾸지 않아 읽지 않는다. 식당을 바꾸면 key로 다시 만들어 지워진다
+  const [announce, setAnnounce] = useState<{
+    key: string
+    text: string
+    entryId?: string
+  } | null>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
 
   // now는 시계가 흐를 때 다시 그리기 위한 값이다. 남은 시간은 실제 시계로 잰다
   const active = getActiveEntry(hall)
   const left = active ? Math.ceil(entryRemainingMs(active) / 60_000) : 0
-  const justCancelled = !active && cancelledHall === hall
+
+  // 선택 안내는 그 선택이 아직 켜져 있을 때만 남긴다(만료나 다른 탭의 교체·취소면 조용히 지운다)
+  const shownAnnounce =
+    announce && (!announce.entryId || active?.id === announce.entryId)
+      ? announce
+      : null
 
   return (
     <section aria-labelledby="entrance-title" className="flex flex-col gap-3">
-      <h2 id="entrance-title" className="text-lg font-bold tracking-tight">
+      <h2
+        id="entrance-title"
+        ref={titleRef}
+        tabIndex={-1}
+        className="text-lg font-bold tracking-tight outline-none"
+      >
         입구 상황
       </h2>
+      {/* 선택하면 버튼이 밀리지 않게 줄 높이를 그대로 둔다 */}
+      <p
+        data-testid="entrance-prompt"
+        aria-hidden={active ? true : undefined}
+        className={cn("text-sm text-muted-foreground", active && "invisible")}
+      >
+        지금 입구 상황을 골라 주세요
+      </p>
       <div className="grid grid-cols-2 gap-3">
         {BUTTONS.map((b) => {
           const pressed = active?.level === b.level
@@ -119,8 +138,12 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
               variant="outline"
               aria-pressed={pressed}
               onClick={() => {
-                setCancelledHall(null)
-                addStaffEntry(hall, b.level, now)
+                const entry = addStaffEntry(hall, b.level, now)
+                setAnnounce({
+                  key: entry.id,
+                  text: `${b.label} 선택됨`,
+                  entryId: entry.id,
+                })
               }}
               className={cn(
                 "relative h-24 flex-col gap-1 rounded-3xl border-2 px-2 py-3",
@@ -148,42 +171,33 @@ function EntranceInput({ hall }: { hall: DiningHallId }) {
           )
         })}
       </div>
-      {/* 입력하거나 풀릴 때만 읽어 준다. 매분 바뀌는 남은 시간은 라이브 영역 밖에 둔다 */}
-      <p key={active?.id ?? "none"} role="status" className="sr-only">
-        {active
-          ? `${LEVEL_LABEL[active.level]} 입력됨`
-          : justCancelled
-            ? "입력 취소됨"
-            : ""}
+      {/* 선택하거나 취소할 때만 읽어 준다. 매분 바뀌는 남은 시간은 라이브 영역 밖에 둔다 */}
+      <p role="status" className="sr-only">
+        {shownAnnounce && (
+          <span key={shownAnnounce.key}>{shownAnnounce.text}</span>
+        )}
       </p>
-      {active ? (
-        <>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
-              {`${formatMinutes(seoulMinutes(new Date(active.at)))}에 입력, ${left}분 남음`}
-            </p>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                cancelStaffEntry(active.id)
-                setCancelledHall(hall)
-              }}
-            >
-              입력 취소
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {`모델${active.model.level === active.level ? "도" : "은"} ${LEVEL_LABEL[active.model.level]}(${compareWait(active.model.waitMinutes)})${PARTICLE[active.model.level]} 봤어요`}
+      {active && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
+          <p className="font-semibold">
+            {`직원들 화면에 '${LEVEL_LABEL[active.level]}'${PARTICLE[active.level]} 보여요`}
           </p>
-        </>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          {justCancelled
-            ? "입력을 취소했어요. 지금은 예측값을 보여주고 있어요"
-            : "지금은 예측값을 보여주고 있어요"}
-        </p>
+          <p className="text-sm text-muted-foreground">
+            {`${formatMinutes(seoulMinutes(new Date(active.at + OVERRIDE_TTL_MS)))}까지 유지돼요(${left}분 남음)`}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 w-full"
+            onClick={() => {
+              cancelStaffEntry(active.id)
+              setAnnounce({ key: `cancel-${active.id}`, text: "선택 취소됨" })
+              titleRef.current?.focus()
+            }}
+          >
+            선택 취소
+          </Button>
+        </div>
       )}
     </section>
   )

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { BUILDINGS, WALK_MINUTES } from '@/data/buildings'
+import { BUILDINGS } from '@/data/buildings'
 import type { BuildingId } from '@/domain/types'
 
 describe('buildings', () => {
@@ -40,15 +40,5 @@ describe('buildings', () => {
     expect(top('new')).toBeLessThan(top('west'))
     for (const id of ['eduResearch', 'asanLife'] as const)
       for (const other of ['east', 'west', 'new'] as const) expect(top(id)).toBeGreaterThanOrEqual(bottom(other))
-  })
-
-  it('copies the walking-minute table from the spec', () => {
-    expect(WALK_MINUTES).toEqual({
-      east: { east: 2, west: 7, new: 8 },
-      west: { east: 7, west: 2, new: 4 },
-      new: { east: 8, west: 4, new: 2 },
-      eduResearch: { east: 6, west: 8, new: 9 },
-      asanLife: { east: 7, west: 9, new: 10 },
-    })
   })
 })

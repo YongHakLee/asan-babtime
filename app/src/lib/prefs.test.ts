@@ -4,11 +4,9 @@ import {
   getFavorites,
   getRating,
   getSubscriptions,
-  getWorkBuilding,
   mockRating,
   rateMeal,
   setSubscriptions,
-  setWorkBuilding,
   toggleFavorite,
 } from '@/lib/prefs'
 
@@ -28,18 +26,6 @@ describe('prefs', () => {
     expect(getRating('k')).toBeNull()
     rateMeal('k', { stars: 4, leftover: 'some' })
     expect(getRating('k')).toEqual({ stars: 4, leftover: 'some' })
-  })
-  it('work building defaults to null and persists', () => {
-    expect(getWorkBuilding()).toBeNull()
-    setWorkBuilding('west')
-    expect(getWorkBuilding()).toBe('west')
-    expect(localStorage.getItem('babttae.workBuilding')).toBe('"west"')
-    setWorkBuilding(null)
-    expect(getWorkBuilding()).toBeNull()
-  })
-  it('unknown stored building is null', () => {
-    localStorage.setItem('babttae.workBuilding', '"annex"')
-    expect(getWorkBuilding()).toBeNull()
   })
   it('mockRating is deterministic and in range', () => {
     for (const n of ['닭갈비', '김치찌개', '돈까스', 'a']) {
