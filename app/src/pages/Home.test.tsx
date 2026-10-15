@@ -15,6 +15,9 @@ describe("Home", () => {
     expect(
       hero.querySelector("[data-slot=hero-tiles]")?.textContent
     ).toBe("신")
+    const mark = hero.querySelector("[data-slot=headline-mark]")
+    expect(mark).toHaveClass("bg-brand-orange")
+    expect(mark).toHaveAttribute("aria-hidden", "true")
     expect(
       screen.getByText(/^동관은 .+, 서관은 .+부터 한산해질 것으로 보여요$/)
     ).toBeInTheDocument()
